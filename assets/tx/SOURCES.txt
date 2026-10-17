@@ -1,0 +1,6 @@
+Текстуры: ambientCG.com, лицензия CC0 (public domain)
+leather: Leather026
+canvas: Fabric030
+linen: Fabric066
+paper: Paper002
+kraft: Paper006

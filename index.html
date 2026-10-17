@@ -1,0 +1,1723 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLAGO — серебро 925</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #dededd; --ink: #111; --text: #3a3a3a; --muted: #777; --line: rgba(0,0,0,.14); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); }
+  html { scrollbar-width: none; }
+  html::-webkit-scrollbar { display: none; }
+  body { color: var(--ink); font-family: Inter, system-ui, sans-serif; overscroll-behavior: none; }
+  canvas#stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+
+  .grain {
+    position: fixed; inset: -100%; width: 300%; height: 300%; pointer-events: none; opacity: .15; z-index: 2;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    animation: grain .8s steps(5) infinite;
+  }
+  @keyframes grain {
+    0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -4%); }
+    60% { transform: translate(-5%, -1%); } 80% { transform: translate(4%, 3%); } 100% { transform: translate(0, 0); }
+  }
+
+  .chrome { position: fixed; inset: 0; pointer-events: none; z-index: 3; padding: 18px 16px; }
+  .bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+  .bar > :last-child { justify-self: end; }
+  .icon { width: 22px; height: 22px; }
+  .wordmark { font-family: "UnifrakturMaguntia", serif; font-size: 34px; line-height: 1; }
+  .small { font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+  .muted { color: var(--muted); }
+  .progress { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .progress .track { width: 1px; height: 120px; background: var(--line); position: relative; overflow: hidden; }
+  .progress .fill { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: var(--ink); transform-origin: top; transform: scaleY(0); }
+  .progress .num { font-size: 10px; letter-spacing: .1em; font-variant-numeric: tabular-nums; }
+
+  .scroller { position: fixed; top: 0; left: 0; width: 100%; z-index: 1; will-change: transform; }
+  section { min-height: 100vh; display: flex; align-items: center; padding: 96px 16px; position: relative; }
+  .wrap { width: 100%; max-width: 1240px; margin: 0 auto; display: flex; }
+  .left .wrap { justify-content: flex-start; }
+  .right .wrap { justify-content: flex-end; }
+  .center .wrap { justify-content: center; text-align: center; }
+
+  .block { max-width: 440px; }
+  .panel { background: rgba(222,222,221,.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); padding: 28px; }
+  .label { font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 22px; display: flex; gap: 14px; align-items: center; }
+  .label::after { content: ''; width: 40px; height: 1px; background: var(--line); }
+  h1, h2 { font-family: "Cormorant Garamond", serif; font-weight: 300; line-height: .98; letter-spacing: -.01em; }
+  h1 { font-size: clamp(40px, 6vw, 84px); }
+  h2 { font-size: clamp(38px, 5vw, 68px); margin-bottom: 22px; }
+  h1 em, h2 em { font-style: italic; }
+  p { font-size: 15px; line-height: 1.7; color: var(--text); }
+
+  .specs { margin-top: 24px; border-top: 1px solid var(--line); }
+  .specs div { display: grid; grid-template-columns: 120px 1fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; line-height: 1.45; }
+  .specs span:first-child { color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-size: 10.5px; padding-top: 2px; }
+
+  .items { margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; border-top: 1px solid var(--line); }
+  .items a { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--ink); text-decoration: none; transition: padding .3s, color .3s; }
+  .items a:hover { padding-left: 6px; }
+  .items a:focus-visible { outline: 1px solid var(--ink); outline-offset: 2px; }
+  .items b { font-weight: 500; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; padding-top: 1px; }
+  .items .group { grid-column: 1 / -1; padding: 16px 0 6px; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+
+  .hero { align-items: flex-end; padding-bottom: 48px; }
+  .hero .wrap { justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
+  .scrollhint { display: flex; align-items: center; gap: 12px; }
+  .scrollhint .line { width: 1px; height: 46px; background: var(--line); position: relative; overflow: hidden; }
+  .scrollhint .line::after { content: ''; position: absolute; left: 0; top: -50%; width: 100%; height: 50%; background: var(--ink); animation: drop 2.2s cubic-bezier(.6,0,.3,1) infinite; }
+  @keyframes drop { to { top: 100%; } }
+  .final { align-items: flex-end; padding-bottom: 40px; }
+  .final h2 { margin-bottom: 14px; }
+  .foot { margin-top: 36px; display: flex; justify-content: center; gap: 28px; flex-wrap: wrap; }
+
+  .reveal > * { opacity: 0; transform: translateY(28px); filter: blur(6px); transition: opacity 1.2s cubic-bezier(.2,.7,.2,1), transform 1.2s cubic-bezier(.2,.7,.2,1), filter 1.2s; }
+  .reveal.in > * { opacity: 1; transform: none; filter: none; }
+  .reveal.in > *:nth-child(2) { transition-delay: .1s; }
+  .reveal.in > *:nth-child(3) { transition-delay: .2s; }
+  .reveal.in > *:nth-child(4) { transition-delay: .3s; }
+
+
+  /* Заголовки появляются по словам: каждое выезжает снизу из-под маски с задержкой */
+  .reveal .w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .08em; margin-bottom: -.08em; }
+  .reveal .w > span { display: inline-block; transform: translateY(105%) rotate(4deg); transform-origin: left bottom;
+    transition: transform 1.15s cubic-bezier(.16,.84,.24,1); transition-delay: calc(var(--i) * 70ms + 120ms); }
+  .reveal.in .w > span { transform: none; }
+  #loader { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; gap: 14px; align-items: center; justify-content: center; z-index: 10; transition: opacity 1.4s ease; }
+  #loader .b { font-family: "UnifrakturMaguntia", serif; font-size: 64px; color: #9a9a9a; animation: pulse 1.6s ease-in-out infinite; }
+  #loader.hide { opacity: 0; pointer-events: none; }
+  @keyframes pulse { 50% { color: #222; } }
+
+  @media (max-width: 760px) {
+    .wordmark { font-size: 28px; }
+    .progress { display: none; }
+    section { align-items: flex-end; padding-bottom: 40px; padding-top: 52vh; }
+    .hero, .final { padding-top: 96px; }
+    .left .wrap, .right .wrap { justify-content: center; }
+    .block { max-width: 100%; }
+    .side { background: rgba(222,222,221,.78); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); padding: 22px; }
+    .items { grid-template-columns: 1fr; }
+    .specs div { grid-template-columns: 100px 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .grain, .scrollhint .line::after { animation: none; }
+    .reveal > *, .reveal .w > span { transition: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div class="grain"></div>
+
+<div class="chrome">
+  <div class="bar">
+    <svg class="icon" viewBox="0 0 200 200" aria-hidden="true">
+      <g fill="currentColor">
+        <path id="arm" d="M88 66 L88 44 L76 38 L100 4 L124 38 L112 44 L112 66 Z"/>
+        <use href="#arm" transform="rotate(90 100 100)"/>
+        <use href="#arm" transform="rotate(180 100 100)"/>
+        <use href="#arm" transform="rotate(270 100 100)"/>
+        <path fill-rule="evenodd" d="M100 60 a40 40 0 1 0 0.01 0 Z M100 72 a28 28 0 1 1 -0.01 0 Z"/>
+      </g>
+    </svg>
+    <div class="wordmark">Blago</div>
+    <div class="small">Silver 925</div>
+  </div>
+  <div class="progress">
+    <div class="num" id="num">01</div>
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <div class="num muted" id="total">18</div>
+  </div>
+</div>
+
+<div class="scroller" id="scroller">
+  <section class="hero" data-pose="hero">
+    <div class="wrap reveal">
+      <div>
+        <div class="label">Sterling silver · 925 · Est. 2026</div>
+        <h1>Добро,<br><em>отлитое в серебре</em></h1>
+      </div>
+      <div class="scrollhint small muted"><span>Scroll</span><span class="line"></span></div>
+    </div>
+  </section>
+
+  <section class="left" data-pose="idea">
+    <div class="wrap">
+      <div class="block side reveal">
+        <div class="label">Идея</div>
+        <h2>Светлое слово<br><em>в тёмной форме</em></h2>
+        <p>Blago — личный бренд украшений из серебра. Название значит «добро», а форма говорит языком готики: острые лучи, тяжёлый металл, чёрный камень. Контраст смысла и формы — и есть характер бренда.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="left" data-pose="sign">
+    <div class="wrap">
+      <div class="block panel reveal">
+        <div class="label">Знак</div>
+        <h2>Четыре луча<br><em>и одно кольцо</em></h2>
+        <p>Лучи с гранёными наконечниками смотрят на четыре стороны света — защита, куда бы ты ни шёл. Кольцо — замкнутый круг, обещание. В центре — B на чёрной эмали, вокруг — зернь из тридцати шести серебряных шариков.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="right" data-pose="material">
+    <div class="wrap">
+      <div class="block panel reveal">
+        <div class="label">Материал</div>
+        <h2>Серебро 925<br><em>и чернение</em></h2>
+        <p>Изделия отливаются из стерлингового серебра, полируются вручную и чернятся в углублениях — рельеф читается глубже, а металл со временем становится только красивее. В лучах — кабошоны из оникса.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="right" data-pose="collection">
+    <div class="wrap">
+      <div class="block side reveal">
+        <div class="label">Коллекция</div>
+        <h2>Двенадцать вещей,<br><em>которые остаются</em></h2>
+        <div class="items" id="toc"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- сюда скрипт вставляет 12 экранов с изделиями -->
+  <div id="products"></div>
+
+  <section class="center final" data-pose="final">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="label" style="justify-content:center">Collection 2026</div>
+        <h2><em>Blago</em></h2>
+        <div class="foot small muted"><span>@blago.silver</span><span>Практическая работа №7</span></div>
+      </div>
+    </div>
+  </section>
+</div>
+<div id="spacer"></div>
+
+<div id="loader"><div class="b">B</div><div class="small muted" id="loadtext">Загрузка</div></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { parse as parseFont } from 'three/addons/libs/opentype.module.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+const FONT_URL = 'https://cdn.jsdelivr.net/npm/@fontsource/unifrakturmaguntia@5.0.12/files/unifrakturmaguntia-latin-400-normal.woff';
+const BG = 0xdededd;
+const TAU = Math.PI * 2;
+const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+
+// =====================================================================
+//  Данные изделий: всё, что требует задание — назначение, материал,
+//  размер, нанесение, цвета, производство
+// =====================================================================
+const PRODUCTS = [
+  { kind: 'Сувенир', name: 'Кольцо-печатка', sub: '«Знак»', build: () => productRing(),
+    purpose: 'Главное украшение бренда. Массивная шинка, квадратная площадка с выгравированным знаком.',
+    specs: [['Материал', 'Серебро 925, чернение'], ['Размер', 'Площадка 14 × 14 мм, размеры 16–21'], ['Нанесение', 'Гравировка знака с чернением'], ['Цвета', '1 — чернь по серебру'], ['Производство', 'Литьё по восковой 3D-модели, ручная полировка']] },
+  { kind: 'Сувенир', name: 'Подвеска', sub: '«Медальон»', build: f => productPendant(f),
+    purpose: 'Знак бренда в натуральную величину: крест-медальон с ониксами и зернью на якорной цепи.',
+    specs: [['Материал', 'Серебро 925, чёрный оникс, эмаль'], ['Размер', '32 × 32 мм, цепь 55 см'], ['Нанесение', 'Рельеф в литье, эмаль в центре'], ['Цвета', 'Серебро + чёрный'], ['Производство', 'Литьё, закрепка кабошонов, заливка эмали']] },
+  { kind: 'Сувенир', name: 'Брелок-карабин', sub: '«Искра»', build: () => productCarabiner(),
+    purpose: 'Брелок для ключей и сумки — самый доступный вход в бренд. На кольце — подвеска-искра из знака.',
+    specs: [['Материал', 'Серебро 925'], ['Размер', 'Карабин 60 мм, кольцо 25 мм'], ['Нанесение', 'Литая подвеска-искра'], ['Цвета', '1 — серебро'], ['Производство', 'Литьё, пружинный замок, полировка']] },
+  { kind: 'Сувенир', name: 'Кожаный браслет', sub: '«Обет»', build: f => productBracelet(f),
+    purpose: 'Повседневный браслет: плотная кожа и изогнутая серебряная накладка с монограммой B.',
+    specs: [['Материал', 'Натуральная кожа 4 мм, серебро 925'], ['Размер', '190 × 12 мм'], ['Нанесение', 'Литая накладка с рельефной B'], ['Цвета', 'Чёрный + серебро'], ['Производство', 'Вырубка кожи, прошивка, литьё накладки']] },
+  { kind: 'Сувенир', name: 'Шопер', sub: 'Чёрный хлопок', build: () => productShopper(),
+    purpose: 'Сумка на каждый день и упаковка для покупок одновременно. Знак и надпись — в центре.',
+    specs: [['Материал', 'Хлопок 280 г/м², чёрный'], ['Размер', '380 × 420 мм, ручки 600 мм'], ['Нанесение', 'Шелкография серебристой краской'], ['Цвета', '1 — Pantone 877 C (metallic)'], ['Производство', 'Пошив, печать через трафарет 43T']] },
+  { kind: 'Сувенир', name: 'Зажигалка', sub: 'В серебряном корпусе', build: () => productLighter(),
+    purpose: 'Аксессуар в духе бренда: бензиновая зажигалка в корпусе из серебра. На корпусе — гравировка знака и надписи.',
+    specs: [['Материал', 'Серебро 925 (корпус), стальная вставка'], ['Размер', '38 × 57 × 13 мм'], ['Нанесение', 'Глубокая гравировка с чернением'], ['Цвета', '1 — чернь по серебру'], ['Производство', 'Штамповка корпуса, ручная гравировка, полировка']] },
+  { kind: 'Презентационная продукция', name: 'Ювелирная коробка', sub: 'Шкатулка', build: () => productBox(),
+    purpose: 'Упаковка для украшений: открывается как шкатулка, внутри — бархатный ложемент и кольцо.',
+    specs: [['Материал', 'Переплётный картон 2 мм, soft-touch бумага, бархат'], ['Размер', '70 × 70 × 45 мм'], ['Нанесение', 'Тиснение серебряной фольгой'], ['Цвета', '1 — фольга серебро'], ['Производство', 'Ручная сборка, клише для тиснения']] },
+  { kind: 'Презентационная продукция', name: 'Бархатный мешочек', sub: 'Для хранения', build: () => productPouch(),
+    purpose: 'Мягкая упаковка и чехол для украшений в дороге. Затягивается шнуром с серебряными бусинами.',
+    specs: [['Материал', 'Хлопковый бархат, вощёный шнур'], ['Размер', '90 × 120 мм'], ['Нанесение', 'Термотрансфер серебром'], ['Цвета', '1 — серебро'], ['Производство', 'Пошив, затяжка шнуром, металлические бусины']] },
+  { kind: 'Презентационная продукция', name: 'Лукбук', sub: 'Коллекция 2026', build: () => productLookbook(),
+    purpose: 'Каталог коллекции: съёмки изделий и образов, описание материалов и ухода.',
+    specs: [['Материал', 'Твёрдая обложка, мелованная бумага 170 г/м²'], ['Размер', '210 × 280 мм, 48 страниц'], ['Нанесение', 'Обложка — фольга, блок — офсет CMYK'], ['Цвета', 'Обложка 1, блок 4 + 4'], ['Производство', 'Офсет, твёрдый переплёт 7БЦ']] },
+  { kind: 'Презентационная продукция', name: 'Сертификат', sub: 'Подлинности', build: () => productCertificate(),
+    purpose: 'Подтверждает подлинность изделия: номер, проба, подпись мастера и голографическая наклейка.',
+    specs: [['Материал', 'Дизайнерский картон 300 г/м²'], ['Размер', '100 × 150 мм, конверт 160 × 110 мм'], ['Нанесение', 'Цифровая печать + голограмма'], ['Цвета', '1 (чёрный) + голограмма'], ['Производство', 'Печать, нумерация, ручная подпись']] },
+  { kind: 'Презентационная продукция', name: 'Визитки', sub: 'Лицо и оборот', build: () => productCards(),
+    purpose: 'Визитка дизайнера: чёрная лицевая сторона с фольгой, светлый оборот с контактами.',
+    specs: [['Материал', 'Картон 600 г/м²'], ['Размер', '90 × 50 мм, скруглённые углы'], ['Нанесение', 'Лицо — фольга серебро, оборот — офсет'], ['Цвета', 'Лицо: фольга · оборот: 1 чёрный'], ['Производство', 'Тиснение, печать, высечка углов']] },
+  { kind: 'Презентационная продукция', name: 'Фирменный пакет', sub: 'Для покупок', build: () => productBag(),
+    purpose: 'Пакет для покупок и подарков. Чёрный крафт, хлопковые ручки, знак в фольге.',
+    specs: [['Материал', 'Чёрный крафт 170 г/м², хлопковый шнур'], ['Размер', '250 × 320 × 100 мм'], ['Нанесение', 'Тиснение серебряной фольгой'], ['Цвета', '1 — фольга серебро'], ['Производство', 'Склейка, укрепление дна, вклейка ручек']] },
+];
+
+// Экраны изделий и оглавление собираем из данных
+(() => {
+  const holder = document.getElementById('products');
+  const toc = document.getElementById('toc');
+  let html = '', list = '';
+  PRODUCTS.forEach((p, i) => {
+    const n = String(i + 1).padStart(2, '0');
+    const side = i % 2 === 0 ? 'left' : 'right';   // изделие справа → текст слева, и наоборот
+    html += `
+    <section class="${side}" data-pose="product" data-product="${i}" id="p${i}">
+      <div class="wrap"><div class="block side reveal">
+        <div class="label">${n} / 12 — ${p.kind}</div>
+        <h2>${p.name}<br><em>${p.sub}</em></h2>
+        <p>${p.purpose}</p>
+        <div class="specs">${p.specs.map(([k, v]) => `<div><span>${k}</span><span>${v}</span></div>`).join('')}</div>
+      </div></div>
+    </section>`;
+    if (i === 0) list += '<div class="group">Сувенирная продукция</div>';
+    if (i === 6) list += '<div class="group">Презентационная продукция</div>';
+    list += `<a href="#p${i}" data-jump="${i}"><b>${n}</b>${p.name}</a>`;
+  });
+  holder.outerHTML = html;
+  toc.innerHTML = list;
+})();
+
+
+// Заголовки — по словам, чтобы они выезжали по очереди
+function splitWords(el) {
+  let i = 0;
+  const walk = node => {
+    for (const ch of [...node.childNodes]) {
+      if (ch.nodeType === 3) {
+        const frag = document.createDocumentFragment();
+        ch.textContent.split(/(\s+)/).forEach(part => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(' ')); return; }
+          const w = document.createElement('span'); w.className = 'w';
+          const inner = document.createElement('span'); inner.textContent = part; inner.style.setProperty('--i', i++);
+          w.appendChild(inner); frag.appendChild(w);
+        });
+        ch.replaceWith(frag);
+      } else if (ch.nodeType === 1 && ch.tagName !== 'BR') walk(ch);
+    }
+  };
+  walk(el);
+}
+document.querySelectorAll('.reveal h1, .reveal h2').forEach(splitWords);
+
+// =====================================================================
+//  Рендер, студия, свет
+// =====================================================================
+const canvas = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight, false);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.95;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(BG);
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+function studioEnvironment() {
+  const s = new THREE.Scene();
+  const dome = new THREE.SphereGeometry(30, 48, 32);
+  const cols = [], pos = dome.attributes.position;
+  const sky = new THREE.Color().setScalar(1.25), horizon = new THREE.Color().setScalar(0.75), ground = new THREE.Color().setScalar(0.22);
+  const c = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i) / 30;
+    if (y > 0) c.lerpColors(horizon, sky, Math.pow(y, 0.7));
+    else c.lerpColors(horizon, ground, Math.min(1, -y * 2));
+    cols.push(c.r, c.g, c.b);
+  }
+  dome.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  s.add(new THREE.Mesh(dome, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide })));
+  const box = (w, h, power, x, y, z) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+      new THREE.MeshBasicMaterial({ color: new THREE.Color().setScalar(power), side: THREE.DoubleSide }));
+    m.position.set(x, y, z);
+    m.lookAt(0, 0, 0);
+    s.add(m);
+  };
+  box(14, 10, 2.2, -8, 9, 6);     // мягкие софтбоксы
+  box(6, 14, 1.3, 12, 2, 4);
+  box(20, 4, 0.5, 0, -8, 10);
+  box(7, 16, 0.0, -13, -1, -3);   // чёрные флаги — тёмные отражения в металле
+  box(6, 16, 0.0, 13, 0, -5);
+  box(24, 5, 0.02, 0, -4, 13);
+  box(5, 12, 0.03, 4, 2, 14);
+  return pmrem.fromScene(s, 0.04).texture;
+}
+scene.environment = studioEnvironment();
+
+const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.1, 100);
+
+// Мягкие тени в стыках и углублениях (ambient occlusion): между зернью, под лучами,
+// внутри букв — без них металл выглядит «нарисованным»
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+// AO считается отдельной камерой, которая не видит слой 1: туда на время перехода
+// уходят растворяющиеся объекты — иначе их «тень» висит в кадре и пропадает рывком
+const aoCamera = camera.clone();
+aoCamera.layers.set(0);
+camera.layers.enable(1);
+const ao = new GTAOPass(scene, aoCamera, innerWidth, innerHeight);
+ao.updateGtaoMaterial({ radius: 0.28, distanceExponent: 1.4, thickness: 1, scale: 1.25, samples: 16, distanceFallOff: 1, screenSpaceRadius: false });
+ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 5, rings: 2, samples: 16 });
+ao.blendIntensity = 0.85;
+composer.addPass(ao);
+composer.addPass(new OutputPass());
+
+
+
+const key = new THREE.DirectionalLight(0xffffff, 1.6);
+key.position.set(-4, 6, 9);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -9, right: 9, top: 8, bottom: -8, near: 1, far: 30 });
+key.shadow.bias = -0.0003;
+key.shadow.normalBias = 0.02;
+key.shadow.camera.layers.enableAll();
+scene.add(key, key.target);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a8a, 0.5));
+
+const wall = new THREE.Mesh(new THREE.PlaneGeometry(80, 50), new THREE.ShadowMaterial({ opacity: 0.1 }));
+wall.position.z = -2.2;
+wall.receiveShadow = true;
+scene.add(wall);
+
+// =====================================================================
+//  Процедурные текстуры
+// =====================================================================
+const rnd = (a, b) => a + Math.random() * (b - a);
+function canvasTex(w, h, draw, { srgb = false, repeat = null } = {}) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c);
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat, repeat); }
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return t;
+}
+
+// Металл: зерно литья, мелкие вмятины, царапины; шероховатость с разводами
+function metalMaps() {
+  const bump = canvasTex(1024, 1024, (b, N) => {
+    b.fillStyle = '#808080'; b.fillRect(0, 0, N, N);
+    for (let i = 0; i < 2600; i++) {
+      const x = rnd(0, N), y = rnd(0, N), r = rnd(3, 14);
+      const g = b.createRadialGradient(x, y, 0, x, y, r);
+      const v = Math.random() < 0.5 ? '0,0,0' : '255,255,255';
+      g.addColorStop(0, `rgba(${v},${rnd(0.03, 0.08)})`); g.addColorStop(1, `rgba(${v},0)`);
+      b.fillStyle = g; b.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    const img = b.getImageData(0, 0, N, N);
+    for (let i = 0; i < img.data.length; i += 4) { const n = (Math.random() - 0.5) * 14; img.data[i] += n; img.data[i + 1] += n; img.data[i + 2] += n; }
+    b.putImageData(img, 0, 0);
+    for (let i = 0; i < 300; i++) {
+      const x = rnd(0, N), y = rnd(0, N), a = rnd(0, Math.PI), l = rnd(20, 200);
+      b.strokeStyle = `rgba(0,0,0,${rnd(0.08, 0.22)})`; b.lineWidth = rnd(0.4, 1.1);
+      b.beginPath(); b.moveTo(x, y); b.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); b.stroke();
+    }
+  }, { repeat: 0.45 });
+  const rough = canvasTex(1024, 1024, (r, N) => {
+    r.fillStyle = 'rgb(150,150,150)'; r.fillRect(0, 0, N, N);
+    for (let i = 0; i < 40; i++) {
+      const x = rnd(0, N), y = rnd(0, N), rad = rnd(60, 220);
+      const g = r.createRadialGradient(x, y, 0, x, y, rad);
+      g.addColorStop(0, `rgba(255,255,255,${rnd(0.05, 0.15)})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+      r.fillStyle = g; r.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+    }
+    for (let i = 0; i < 300; i++) {
+      const x = rnd(0, N), y = rnd(0, N), a = rnd(0, Math.PI), l = rnd(20, 200);
+      r.strokeStyle = `rgba(255,255,255,${rnd(0.12, 0.35)})`; r.lineWidth = rnd(0.4, 1.1);
+      r.beginPath(); r.moveTo(x, y); r.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); r.stroke();
+    }
+  }, { repeat: 0.45 });
+  return { bump, rough };
+}
+// Ткань: переплетение нитей
+const weaveTex = (rep) => canvasTex(128, 128, (g, N) => {
+  g.fillStyle = '#808080'; g.fillRect(0, 0, N, N);
+  for (let y = 0; y < N; y += 4) { g.fillStyle = (y / 4) % 2 ? '#959595' : '#6a6a6a'; g.fillRect(0, y, N, 2); }
+  for (let x = 0; x < N; x += 4) { g.fillStyle = (x / 4) % 2 ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.12)'; g.fillRect(x, 0, 2, N); }
+}, { repeat: rep });
+// Кожа и бумага: мелкое зерно
+const grainTex = (rep, size = 6, count = 9000) => canvasTex(512, 512, (g, N) => {
+  g.fillStyle = '#808080'; g.fillRect(0, 0, N, N);
+  for (let i = 0; i < count; i++) {
+    const x = rnd(0, N), y = rnd(0, N), r = rnd(1, size);
+    g.fillStyle = Math.random() < 0.5 ? `rgba(0,0,0,${rnd(0.05, 0.18)})` : `rgba(255,255,255,${rnd(0.05, 0.15)})`;
+    g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill();
+  }
+}, { repeat: rep });
+// Торец книжного блока — тонкие листы
+const pagesTex = () => canvasTex(512, 32, (g, W, H) => {
+  g.fillStyle = '#eceae3'; g.fillRect(0, 0, W, H);
+  for (let x = 0; x < W; x += 2) { g.fillStyle = `rgba(0,0,0,${rnd(0.02, 0.12)})`; g.fillRect(x, 0, 1, H); }
+}, { srgb: true });
+
+// ---------- Знак и надпись для печати ----------
+const ARM_PATH = 'M88 66 L88 44 L76 38 L100 4 L124 38 L112 44 L112 66 Z';
+function sparkPath(ctx, x, y, r) {
+  const k = 0.13 * r;
+  ctx.moveTo(x, y - r);
+  ctx.quadraticCurveTo(x + k, y - k, x + r, y); ctx.quadraticCurveTo(x + k, y + k, x, y + r);
+  ctx.quadraticCurveTo(x - k, y + k, x - r, y); ctx.quadraticCurveTo(x - k, y - k, x, y - r);
+}
+function drawMark(ctx, cx, cy, size, color) {
+  ctx.save();
+  ctx.translate(cx - size / 2, cy - size / 2);
+  ctx.scale(size / 200, size / 200);
+  ctx.fillStyle = color;
+  const arm = new Path2D(ARM_PATH);
+  for (let k = 0; k < 4; k++) {
+    ctx.save(); ctx.translate(100, 100); ctx.rotate(k * Math.PI / 2); ctx.translate(-100, -100); ctx.fill(arm); ctx.restore();
+  }
+  ctx.beginPath(); ctx.arc(100, 100, 40, 0, TAU); ctx.arc(100, 100, 31, 0, TAU, true); ctx.fill();
+  ctx.beginPath(); [[150, 50], [50, 50], [150, 150], [50, 150]].forEach(([x, y]) => sparkPath(ctx, x, y, 9)); ctx.fill();
+  ctx.font = '58px UnifrakturMaguntia'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('B', 100, 121);
+  ctx.restore();
+}
+function drawWord(ctx, x, y, px, color, align = 'center') {
+  ctx.fillStyle = color; ctx.font = `${px}px UnifrakturMaguntia`; ctx.textAlign = align; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('Blago', x, y);
+}
+let T = {};
+function buildPrintTextures() {
+  const W = '#fff';
+  T.mark = canvasTex(1024, 1024, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); drawMark(g, 512, 512, 940, W); });
+  T.lockup = canvasTex(1024, 1280, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); drawMark(g, 512, 420, 760, W); drawWord(g, 512, 1150, 250, W); });
+  T.word = canvasTex(1024, 360, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); drawWord(g, 512, 270, 260, W); });
+  T.lockupH = canvasTex(1024, 569, (g, w, h) => {
+    g.fillStyle = '#000'; g.fillRect(0, 0, w, h);
+    drawMark(g, 250, 284, 340, W); drawWord(g, 660, 350, 190, W);
+  });
+  T.bookLine = canvasTex(1024, 64, (g, w, h) => {
+    g.fillStyle = '#000'; g.fillRect(0, 0, w, h);
+    g.fillStyle = W; g.font = '500 34px Inter'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.letterSpacing = '10px'; g.fillText('LOOKBOOK — COLLECTION 2026', 512, 34);
+  });
+  // Сертификат подлинности
+  T.cert = canvasTex(1024, 1434, (g, w, h) => {
+    g.fillStyle = '#efece4'; g.fillRect(0, 0, w, h);
+    g.strokeStyle = '#1b1b1b'; g.lineWidth = 3; g.strokeRect(46, 46, w - 92, h - 92);
+    g.lineWidth = 1; g.strokeRect(60, 60, w - 120, h - 120);
+    drawMark(g, 512, 250, 230, '#161616');
+    g.fillStyle = '#161616'; g.textAlign = 'center';
+    g.font = 'italic 300 70px "Cormorant Garamond"'; g.fillText('Certificate of Authenticity', 512, 470);
+    g.font = '500 22px Inter'; g.letterSpacing = '6px'; g.fillStyle = '#666'; g.fillText('СЕРТИФИКАТ ПОДЛИННОСТИ', 512, 520);
+    g.letterSpacing = '0px';
+    const rows = [['ИЗДЕЛИЕ', 'Кольцо-печатка «Знак»'], ['МЕТАЛЛ', 'Серебро 925'], ['ВСТАВКА', 'Чёрный оникс'], ['НОМЕР', '№ 0001 / 2026'], ['ДАТА', '17.10.2026']];
+    rows.forEach(([k, v], i) => {
+      const y = 650 + i * 92;
+      g.textAlign = 'left'; g.fillStyle = '#777'; g.font = '500 20px Inter'; g.letterSpacing = '3px'; g.fillText(k, 140, y);
+      g.letterSpacing = '0px'; g.textAlign = 'right'; g.fillStyle = '#161616'; g.font = '400 40px "Cormorant Garamond"'; g.fillText(v, 884, y);
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(140, y + 26, 744, 1);
+    });
+    g.fillStyle = '#161616'; g.fillRect(140, 1200, 320, 1.5);
+    drawWord(g, 290, 1180, 62, '#222');
+    g.textAlign = 'left'; g.fillStyle = '#777'; g.font = '500 18px Inter'; g.letterSpacing = '3px'; g.fillText('ПОДПИСЬ МАСТЕРА', 140, 1240);
+  }, { srgb: true });
+  // Оборот визитки
+  T.cardBack = canvasTex(1024, 569, (g, w, h) => {
+    g.fillStyle = '#efede8'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#151515'; g.textAlign = 'left';
+    g.font = '300 76px "Cormorant Garamond"'; g.fillText('Благо', 80, 200);
+    g.fillStyle = '#666'; g.font = '400 26px Inter'; g.fillText('Дизайнер украшений', 82, 250);
+    g.fillStyle = '#151515'; g.font = '400 24px Inter';
+    ['@blago.silver', 'blago-silver.ru', '+7 900 000-00-00'].forEach((t, i) => g.fillText(t, 82, 390 + i * 40));
+    drawMark(g, 880, 150, 150, '#151515');
+  }, { srgb: true });
+}
+
+// =====================================================================
+//  Материалы
+// =====================================================================
+const maps = metalMaps();
+const SILVER = { color: new THREE.Color(0xdcdce0), roughness: 0.34 };
+const OXIDIZED = { color: new THREE.Color(0x77777d), roughness: 0.7 };
+const metal = new THREE.MeshPhysicalMaterial({
+  color: SILVER.color.clone(), roughness: SILVER.roughness, metalness: 1,
+  roughnessMap: maps.rough, bumpMap: maps.bump, bumpScale: 0.35, envMapIntensity: 1.0,
+});
+// Отдельный «каталожный» металл для изделий — не темнеет вместе с логотипом
+const metalP = metal.clone();
+const enamel = new THREE.MeshPhysicalMaterial({ color: 0x0b0b0c, roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.2 });
+const onyx = new THREE.MeshPhysicalMaterial({ color: 0x050506, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: 1.4 });
+const softTouch = new THREE.MeshPhysicalMaterial({ color: 0x151516, roughness: 0.78, bumpMap: grainTex(3, 2, 6000), bumpScale: 0.15 });
+const cotton = new THREE.MeshStandardMaterial({ color: 0x19191a, roughness: 1, bumpMap: weaveTex(14), bumpScale: 0.6 });
+const fleece = new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 1, bumpMap: weaveTex(26), bumpScale: 0.4 });
+const leather = new THREE.MeshPhysicalMaterial({ color: 0x141414, roughness: 0.55, clearcoat: 0.25, clearcoatRoughness: 0.5, bumpMap: grainTex(4, 5), bumpScale: 0.5 });
+const velvet = new THREE.MeshPhysicalMaterial({ color: 0x0f0f10, roughness: 0.9, sheen: 1, sheenColor: new THREE.Color(0x6a6a72), sheenRoughness: 0.45, side: THREE.DoubleSide });
+const kraft = new THREE.MeshStandardMaterial({ color: 0x141415, roughness: 0.82, bumpMap: grainTex(3, 3, 8000), bumpScale: 0.25 });
+const paper = new THREE.MeshStandardMaterial({ color: 0xefede8, roughness: 0.9, bumpMap: grainTex(3, 2, 6000), bumpScale: 0.1 });
+const cord = new THREE.MeshStandardMaterial({ color: 0x202022, roughness: 0.85 });
+const hologram = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.18, iridescence: 1, iridescenceIOR: 1.8, iridescenceThicknessRange: [200, 900] });
+
+const decalBase = { alphaTest: 0.5, polygonOffset: true, polygonOffsetFactor: -3 };
+const foil = tex => new THREE.MeshStandardMaterial({ ...decalBase, color: 0xd9d9de, metalness: 1, roughness: 0.24, alphaMap: tex });
+const silverInk = tex => new THREE.MeshStandardMaterial({ ...decalBase, color: 0xc2c2c7, metalness: 0.3, roughness: 0.6, alphaMap: tex });
+const ink = (tex, color, roughness = 0.8) => new THREE.MeshStandardMaterial({ ...decalBase, color, roughness, alphaMap: tex });
+const printed = tex => new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -3 });
+
+// =====================================================================
+//  Геометрия
+// =====================================================================
+const S = (x, y) => new THREE.Vector2((x - 100) / 50, -(y - 100) / 50);
+// Сглаживание нормалей: мягкие скосы без «ступенек», острые рёбра остаются острыми
+const smooth = (g, angle = Math.PI / 5) => toCreasedNormals(g, angle);
+
+function extrude(shape, depth, bevel, segs = 6, sizeK = 0.8, curveSegs = 64) {
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * sizeK, bevelSegments: segs, curveSegments: curveSegs,
+  });
+  geo.translate(0, 0, -depth / 2);
+  return smooth(geo);
+}
+function armShape() {
+  return new THREE.Shape([[88, 66], [88, 44], [76, 38], [100, 4], [124, 38], [112, 44], [112, 66]].map(p => S(...p)));
+}
+function sparkShape(r) {
+  const k = 0.13 * r, s = new THREE.Shape();
+  s.moveTo(0, r);
+  s.quadraticCurveTo(k, k, r, 0); s.quadraticCurveTo(k, -k, 0, -r);
+  s.quadraticCurveTo(-k, -k, -r, 0); s.quadraticCurveTo(-k, k, 0, r);
+  return s;
+}
+function textShapes(font, text, size) {
+  const path = font.getPath(text, 0, 0, size);
+  const sp = new THREE.ShapePath();
+  for (const c of path.commands) {
+    if (c.type === 'M') sp.moveTo(c.x, -c.y);
+    else if (c.type === 'L') sp.lineTo(c.x, -c.y);
+    else if (c.type === 'Q') sp.quadraticCurveTo(c.x1, -c.y1, c.x, -c.y);
+    else if (c.type === 'C') sp.bezierCurveTo(c.x1, -c.y1, c.x2, -c.y2, c.x, -c.y);
+  }
+  let best = 0;
+  for (const sub of sp.subPaths) { const a = THREE.ShapeUtils.area(sub.getPoints()); if (Math.abs(a) > Math.abs(best)) best = a; }
+  return sp.toShapes(best > 0);
+}
+function textGeo(font, text, height, depth, bevel, bevelSize) {
+  const shapes = textShapes(font, text, 100);
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const sh of shapes) for (const p of sh.getPoints()) {
+    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+  }
+  const k = height / (maxY - minY);
+  const geo = new THREE.ExtrudeGeometry(shapes, {
+    depth: depth / k, bevelEnabled: true, bevelThickness: bevel / k, bevelSize: bevelSize / k, bevelSegments: 5, curveSegments: 28,
+  });
+  geo.translate(-(minX + maxX) / 2, -(minY + maxY) / 2, -depth / k / 2);
+  geo.scale(k, k, k);
+  const uv = geo.attributes.uv;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * k, uv.getY(i) * k);
+  return smooth(geo);
+}
+
+function mesh(parent, geo, mat, x = 0, y = 0, z = 0) {
+  const m = new THREE.Mesh(geo, mat);
+  m.position.set(x, y, z);
+  parent.add(m);
+  return m;
+}
+function decal(parent, w, h, mat, x, y, z, rx = 0, ry = 0, rz = 0, geo = null) {
+  const m = new THREE.Mesh(geo || new THREE.PlaneGeometry(w, h), mat);
+  m.position.set(x, y, z); m.rotation.set(rx, ry, rz);
+  parent.add(m);
+  return m;
+}
+const rbox = (w, h, d, r, seg = 6) => new RoundedBoxGeometry(w, h, d, seg, r);
+const tube = (pts, r, closed = false, seg = 200, radial = 24) =>
+  new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, closed, 'centripetal'), seg, r, radial, closed);
+
+// Профиль-«капля» для кольца знака: скруглённый купол с плоской тыльной стороной
+function domeRingGeo(rIn, rOut, back, top) {
+  const mid = (rIn + rOut) / 2, rad = (rOut - rIn) / 2;
+  const pts = [new THREE.Vector2(rIn, back), new THREE.Vector2(rIn, top - rad)];
+  for (let i = 0; i <= 32; i++) {
+    const a = Math.PI - (i / 32) * Math.PI;
+    pts.push(new THREE.Vector2(mid + Math.cos(a) * rad, top - rad + Math.sin(a) * rad));
+  }
+  pts.push(new THREE.Vector2(rOut, back), new THREE.Vector2(rIn, back));
+  const g = new THREE.LatheGeometry(pts, 180);
+  g.rotateX(Math.PI / 2);
+  return g;
+}
+
+// =====================================================================
+//  Знак бренда (используется и как логотип, и как подвеска)
+// =====================================================================
+// Литые формы: каждая деталь — «надутый» силуэт с хребтом по центру (как у отливки),
+// с чернением в низинах. Так выглядит настоящее литое серебро, а не выдавленная пластина.
+let GEO = null;
+function shadeByHeight(geo, top, dark = 0.5) {   // чернение для лат/сфер: ниже — темнее
+  const p = geo.attributes.position, C = new Float32Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) {
+    const k = Math.min(Math.max(p.getZ(i) / top, 0), 1);
+    const v = 1 - dark * (1 - Math.pow(k, 0.6));
+    C.set([v, v, v], i * 3);
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(C, 3));
+  return geo;
+}
+function markGeometries(font) {
+  if (GEO) return GEO;
+  const armOutline = armShape().getSpacedPoints(360).slice(0, -1);
+  const sparkOutline = sparkShape(0.2).getSpacedPoints(240).slice(0, -1);
+  // Буква B: контуры из шрифта, приведённые к высоте 0.86 и центрированные
+  const shapes = textShapes(font, 'B', 100);
+  const raw = [];
+  for (const sh of shapes) {
+    raw.push(sh.getSpacedPoints(420).slice(0, -1));
+    for (const h of sh.holes) raw.push(h.getSpacedPoints(220).slice(0, -1));
+  }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const l of raw) for (const p of l) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }
+  const k = 0.86 / (maxY - minY), cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+  const bLoops = raw.map(l => l.map(p => new THREE.Vector2((p.x - cx) * k, (p.y - cy) * k)));
+
+  GEO = {
+    // у кольца луч плавно «ныряет» под него
+    arm: garment(armOutline, { T: 0.15, R: 0.27, step: 0.0045, back: 0.35, oxidize: 0.6,
+      mask: (x, y) => 0.25 + 0.75 * smoothstep(0.7, 1.0, Math.hypot(x, y)) }).geo,
+    spark: garment(sparkOutline, { T: 0.075, R: 0.1, step: 0.0035, back: 0.35, oxidize: 0.55 }).geo,
+    b: garment(bLoops, { T: 0.1, R: 0.055, step: 0.0032, back: 0.4, oxidize: 0.65 }).geo,
+    ring: shadeByHeight(domeRingGeo(0.6, 0.83, -0.1, 0.17), 0.17, 0.55),
+    bead: shadeByHeight(new THREE.SphereGeometry(0.034, 24, 16), 0.034, 0.6),
+    disk: new THREE.CylinderGeometry(0.61, 0.61, 0.08, 128),
+    cab: new THREE.SphereGeometry(0.095, 64, 40),
+    bezel: shadeByHeight(new THREE.TorusGeometry(0.1, 0.022, 24, 80), 0.022, 0.5),
+  };
+  return GEO;
+}
+// Копия материала с поддержкой чернения (цвета вершин); одна на исходный материал
+const OX = new Map();
+function oxOf(mat) {
+  if (!OX.has(mat)) { const m = mat.clone(); m.vertexColors = true; OX.set(mat, m); }
+  return OX.get(mat);
+}
+// Модели из Blender (blender/build.py → assets/*.glb). Если файл не загрузился
+// (например, страницу открыли без сервера), используется процедурная версия.
+const MODELS = {};
+function loadModels(names) {
+  const draco = new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
+  const loader = new GLTFLoader().setDRACOLoader(draco);
+  return Promise.all(names.map(n => loader.loadAsync(`assets/${n}.glb`)
+    .then(g => { MODELS[n] = g.scene; })
+    .catch(err => console.warn(`${n}.glb не загрузился — процедурная версия`, err))));
+}
+const steelMat = new THREE.MeshPhysicalMaterial({ color: 0xb4b4ba, metalness: 1, roughness: 0.42, roughnessMap: maps.rough, bumpMap: maps.bump, bumpScale: 0.2 });
+const engraveMat = new THREE.MeshPhysicalMaterial({ color: 0x3e3e43, metalness: 0.85, roughness: 0.55 });
+const darkMat = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 1 });
+const wickMat = new THREE.MeshStandardMaterial({ color: 0xd8c9a8, roughness: 1 });
+// Фото-текстуры ambientCG (CC0): грузятся один раз, общие для всех моделей
+const TX = {};
+const TX_REPEAT = { leather: 2.5, canvas: 3, linen: 2, paper: 1.5, kraft: 1.5 };
+function loadTextures() {
+  const L = new THREE.TextureLoader();
+  const one = (file, srgb, rep) => L.loadAsync(`assets/tx/${file}.jpg`).then(t => {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(rep, rep);
+    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  });
+  return Promise.all(Object.entries(TX_REPEAT).map(([k, rep]) =>
+    Promise.all([one(`${k}_c`, true, rep), one(`${k}_n`, false, rep), one(`${k}_r`, false, rep)])
+      .then(([c, n, r]) => { TX[k] = { c, n, r }; })))
+    .catch(err => console.warn('текстуры не загрузились', err));
+}
+let TEXMAT = null;
+function texMaterials() {
+  if (TEXMAT) return TEXMAT;
+  const t = k => TX[k] || {};
+  TEXMAT = {
+    leather: new THREE.MeshPhysicalMaterial({ map: t('leather').c, normalMap: t('leather').n, roughnessMap: t('leather').r, color: 0xc8c8c8, roughness: 1, clearcoat: 0.25, clearcoatRoughness: 0.5 }),
+    canvas: new THREE.MeshStandardMaterial({ map: t('canvas').c, normalMap: t('canvas').n, roughnessMap: t('canvas').r, color: 0x4a4a4e, roughness: 1 }),
+    linen: new THREE.MeshPhysicalMaterial({ map: t('linen').c, normalMap: t('linen').n, color: 0x2a2a2e, roughness: 0.95, sheen: 1, sheenColor: new THREE.Color(0x6a6a72), sheenRoughness: 0.45, side: THREE.DoubleSide }),
+    softtouch: new THREE.MeshPhysicalMaterial({ map: t('paper').c, normalMap: t('paper').n, normalScale: new THREE.Vector2(0.6, 0.6), color: 0x1d1d20, roughness: 0.8 }),
+    paper: new THREE.MeshStandardMaterial({ map: t('paper').c, normalMap: t('paper').n, normalScale: new THREE.Vector2(0.5, 0.5), color: 0xffffff, roughness: 0.92 }),
+    kraft: new THREE.MeshStandardMaterial({ map: t('kraft').c, normalMap: t('kraft').n, roughnessMap: t('kraft').r, color: 0x303034, roughness: 0.95 }),
+    thread: new THREE.MeshStandardMaterial({ color: 0xbab6ad, roughness: 1 }),
+  };
+  return TEXMAT;
+}
+// У glTF вертикаль UV перевёрнута относительно холстов three.js — для моделей из Blender берём копию без flipY
+const GLTF_TEX = {};
+function gltfTex(key) {
+  if (!GLTF_TEX[key]) { const t = T[key].clone(); t.flipY = false; t.needsUpdate = true; GLTF_TEX[key] = t; }
+  return GLTF_TEX[key];
+}
+// Копия модели с нашими материалами (по именам материалов из Blender).
+// «вид:текстура» — принты: foil (фольга), silverink (серебристая краска), ink (краска), printed (полноцвет)
+function matByName(n, o, silver) {
+  if (n.includes(':')) {
+    const [kind, key] = n.split(':');
+    const tex = gltfTex(key);
+    if (kind === 'foil') return foil(tex);
+    if (kind === 'silverink') return silverInk(tex);
+    if (kind === 'ink') return ink(tex, 0x8d8d92);
+    if (kind === 'printed') return printed(tex);
+  }
+  const tm = texMaterials();
+  if (tm[n]) return tm[n];
+  const simple = { enamel, onyx, steel: steelMat, engrave: engraveMat, dark: darkMat, wick: wickMat, cord, hologram,
+    pages: new THREE.MeshStandardMaterial({ map: pagesTex(), roughness: 0.95 }) };
+  if (simple[n]) return simple[n];
+  return o.geometry.attributes.color ? oxOf(silver) : silver;
+}
+function useModel(name, silver) {
+  const m = MODELS[name].clone(true);
+  m.traverse(o => {
+    if (!o.isMesh) return;
+    o.material = matByName(o.material.name, o, silver);
+    o.castShadow = o.receiveShadow = true;
+  });
+  return m;
+}
+// Изделие из Blender с поворотом для витрины (или null, если модели нет)
+function fromModel(name, rot) {
+  if (!MODELS[name]) return null;
+  const g = new THREE.Group();
+  g.add(useModel(name, metalP));
+  g.rotation.set(...rot);
+  return g;
+}
+function buildMark(font, mat, variant = 'mark') {
+  if (MODELS[variant]) return useModel(variant, mat);
+  const G = markGeometries(font);
+  const ox = oxOf(mat);
+  const mark = new THREE.Group();
+  const cy = S(100, 47).y;
+  for (let i = 0; i < 4; i++) {
+    const g = new THREE.Group();
+    g.rotation.z = -i * Math.PI / 2;
+    mark.add(g);
+    mesh(g, G.arm, ox);
+    const cab = mesh(g, G.cab, onyx, 0, cy, 0.165);
+    cab.scale.set(1, 1, 0.5);
+    mesh(g, G.bezel, ox, 0, cy, 0.165);
+  }
+  mesh(mark, G.ring, ox);
+  const beads = new THREE.InstancedMesh(G.bead, ox, 36);
+  const m4 = new THREE.Matrix4();
+  for (let i = 0; i < 36; i++) {
+    const a = (i / 36) * TAU;
+    beads.setMatrixAt(i, m4.makeTranslation(Math.cos(a) * 0.715, Math.sin(a) * 0.715, 0.165));
+  }
+  mark.add(beads);
+  const disk = mesh(mark, G.disk, enamel, 0, 0, -0.04);
+  disk.rotation.x = Math.PI / 2;
+  mesh(mark, G.b, ox, 0, 0, 0.0);
+  for (const [x, y] of [[150, 50], [50, 50], [150, 150], [50, 150]]) { const v = S(x, y); mesh(mark, G.spark, ox, v.x, v.y, 0); }
+  return mark;
+}
+
+// =====================================================================
+//  12 изделий
+// =====================================================================
+function productRing() {
+  if (MODELS.ring) {
+    const g = new THREE.Group();
+    g.add(useModel('ring', metalP));
+    g.rotation.set(0.85, -0.55, 0);
+    return g;
+  }
+  const g = new THREE.Group();
+  // Шинка: профиль-сверхэллипс, вращённый по кругу — гладкая, без граней
+  const pts = [];
+  for (let k = 0; k <= 72; k++) {
+    const a = (k / 72) * TAU, c = Math.cos(a), s = Math.sin(a);
+    pts.push(new THREE.Vector2(0.86 + 0.08 * Math.sign(c) * Math.pow(Math.abs(c), 0.55), 0.21 * Math.sign(s) * Math.pow(Math.abs(s), 0.55)));
+  }
+  const bandGeo = new THREE.LatheGeometry(pts, 200);
+  bandGeo.rotateX(Math.PI / 2);
+  mesh(g, bandGeo, metalP);
+  // Переход к площадке и сама площадка
+  const bridge = mesh(g, new THREE.SphereGeometry(0.5, 96, 48), metalP, 0, 0.86, 0);
+  bridge.scale.set(1.15, 0.42, 0.62);
+  mesh(g, rbox(1.04, 0.34, 0.68, 0.13, 8), metalP, 0, 1.0, 0);
+  // Гравировка с чернением
+  decal(g, 0.8, 0.8, new THREE.MeshStandardMaterial({ ...decalBase, color: 0x46464b, metalness: 0.9, roughness: 0.55, alphaMap: T.mark }),
+    0, 1.171, 0, -Math.PI / 2);
+  g.rotation.set(0.85, -0.55, 0);
+  return g;
+}
+
+function productPendant(font) {
+  const g = new THREE.Group();
+  g.add(buildMark(font, metalP, 'pendant'));
+  mesh(g, new THREE.TorusGeometry(0.075, 0.025, 20, 48), metalP, 0, 1.99, 0);
+  const bail = mesh(g, new THREE.TorusGeometry(0.13, 0.04, 24, 64), metalP, 0, 2.17, 0);
+  bail.rotation.y = Math.PI / 2;
+  // Якорная цепь двумя ветками вверх
+  const link = new THREE.TorusGeometry(0.075, 0.02, 16, 40);
+  link.scale(1.6, 1, 1);
+  for (const side of [-1, 1]) {
+    const a = V3(0, 2.3, 0), b = V3(side * 0.9, 3.7, -0.2);
+    const dir = b.clone().sub(a), n = 9;
+    for (let k = 0; k < n; k++) {
+      const p = a.clone().addScaledVector(dir, (k + 0.5) / n);
+      const holder = new THREE.Group();
+      holder.position.copy(p);
+      holder.rotation.z = Math.atan2(dir.y, dir.x);
+      const l = mesh(holder, link, metalP);
+      l.rotation.x = k % 2 ? Math.PI / 2 : 0;
+      g.add(holder);
+    }
+  }
+  g.rotation.set(0.05, -0.4, 0);
+  return g;
+}
+
+function productCarabiner() {
+  if (MODELS.carabiner) {
+    const g = new THREE.Group();
+    g.add(useModel('carabiner', metalP));
+    g.rotation.set(0.05, -0.35, 0.12);
+    return g;
+  }
+  const g = new THREE.Group();
+  const P = [[0.44, 0.72], [0.45, 1.05], [0.22, 1.32], [-0.15, 1.3], [-0.43, 1.05], [-0.56, 0.4], [-0.5, -0.55], [-0.3, -1.08], [0, -1.24], [0.3, -1.08], [0.48, -0.6]]
+    .map(([x, y]) => V3(x, y, 0));
+  mesh(g, tube(P, 0.085, false, 300, 28), metalP);
+  mesh(g, new THREE.SphereGeometry(0.085, 32, 16), metalP, P[0].x, P[0].y, 0);
+  mesh(g, new THREE.SphereGeometry(0.085, 32, 16), metalP, P[P.length - 1].x, P[P.length - 1].y, 0);
+  // Защёлка
+  mesh(g, tube([V3(0.49, -0.58, 0), V3(0.465, 0.05, 0), V3(0.445, 0.68, 0)], 0.055, false, 60, 20), metalP);
+  const sleeve = mesh(g, new THREE.CylinderGeometry(0.08, 0.08, 0.24, 40), metalP, 0.485, -0.45, 0);
+  sleeve.rotation.z = 0.04;
+  // Кольцо и подвеска-искра
+  const ring = mesh(g, new THREE.TorusGeometry(0.45, 0.036, 24, 160), metalP, 0, -1.66, 0);
+  ring.rotation.y = 0.9;
+  mesh(g, new THREE.TorusGeometry(0.075, 0.022, 16, 40), metalP, 0.06, -2.13, 0);
+  const spark = mesh(g, extrude(sparkShape(0.36), 0.05, 0.08, 1, 0.7), metalP, 0.06, -2.55, 0);
+  spark.rotation.y = 0.35;
+  g.rotation.set(0.05, -0.35, 0.12);
+  return g;
+}
+
+function productBracelet(font) {
+  const fm = fromModel('bracelet', [0.6, -0.45, 0]);
+  if (fm) return fm;
+  const g = new THREE.Group();
+  const band = new THREE.TorusGeometry(1.05, 0.075, 48, 240);
+  band.scale(1, 1, 2.5);
+  mesh(g, band, leather);
+  // Изогнутая накладка точно по радиусу ремня
+  const s = new THREE.Shape();
+  s.absarc(0, 0, 1.21, Math.PI / 2 - 0.36, Math.PI / 2 + 0.36, false);
+  s.absarc(0, 0, 1.1, Math.PI / 2 + 0.36, Math.PI / 2 - 0.36, true);
+  mesh(g, extrude(s, 0.38, 0.035, 4, 0.7, 96), metalP);
+  const b = mesh(g, textGeo(font, 'B', 0.24, 0.035, 0.012, 0.004), metalP, 0, 1.235, 0);
+  b.rotation.x = -Math.PI / 2;
+  for (const x of [-0.15, 0.15]) mesh(g, rbox(0.24, 0.2, 0.46, 0.06), metalP, x, -1.06, 0);
+  g.rotation.set(0.6, -0.45, 0);
+  return g;
+}
+
+// =====================================================================
+//  Ткань «по выкройке»: силуэт изделия заполняется плотной сеткой и мягко
+//  «надувается» от краёв к центру — как настоящая вещь, разложенная на столе.
+//  H(x, y) — высота лицевой поверхности в любой точке: по ней на ткань
+//  ложатся швы, шнурки и принт.
+// =====================================================================
+// outline — один контур или массив контуров (буква с «дырками»: правило чёт-нечет).
+// oxidize — чернение: вершины тем темнее, чем ниже они лежат (края, стыки, углубления)
+function garment(outline, { T, R, step = 0.012, wrinkle = () => 0, back = 0.85, oxidize = 0, profile: prof = null, mask = null }) {
+  const loops = Array.isArray(outline[0]) ? outline : [outline];
+  const E = [];   // все рёбра всех контуров: ax, ay, bx, by
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const loop of loops) {
+    for (let i = 0, j = loop.length - 1; i < loop.length; j = i++) E.push(loop[j].x, loop[j].y, loop[i].x, loop[i].y);
+    for (const p of loop) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }
+  }
+  const ne = E.length / 4;
+  const inside = (x, y) => {
+    let c = false;
+    for (let e = 0; e < ne; e++) {
+      const ax = E[e * 4], ay = E[e * 4 + 1], bx = E[e * 4 + 2], by = E[e * 4 + 3];
+      if ((ay > y) !== (by > y) && x < ((bx - ax) * (y - ay)) / (by - ay) + ax) c = !c;
+    }
+    return c;
+  };
+  // Расстояние до края + ближайшая точка на краю
+  const nearest = (x, y) => {
+    let best = Infinity, qx = 0, qy = 0;
+    for (let e = 0; e < ne; e++) {
+      const ax = E[e * 4], ay = E[e * 4 + 1], dx = E[e * 4 + 2] - ax, dy = E[e * 4 + 3] - ay;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1)));
+      const px = ax + dx * t, py = ay + dy * t, d = (x - px) ** 2 + (y - py) ** 2;
+      if (d < best) { best = d; qx = px; qy = py; }
+    }
+    return { d: Math.sqrt(best), x: qx, y: qy };
+  };
+  const profile = prof || (d => { const k = Math.min(d / R, 1); return Math.sqrt(1 - (1 - k) * (1 - k)); });
+  const H = (x, y) => {
+    if (!inside(x, y)) return 0;
+    const d = nearest(x, y).d;
+    return (T * profile(d) + wrinkle(x, y) * Math.min(d / R, 1)) * (mask ? mask(x, y) : 1);
+  };
+
+  const nx = Math.ceil((maxX - minX) / step) + 3, ny = Math.ceil((maxY - minY) / step) + 3;
+  const ox = minX - step, oy = minY - step;
+  const ins = new Uint8Array(nx * ny), pos = new Float32Array(nx * ny * 3), hgt = new Float32Array(nx * ny);
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+    const k = j * nx + i, x = ox + i * step, y = oy + j * step;
+    if (inside(x, y)) {
+      ins[k] = 1;
+      const d = nearest(x, y).d;
+      hgt[k] = (T * profile(d) + wrinkle(x, y) * Math.min(d / R, 1)) * (mask ? mask(x, y) : 1);
+      pos.set([x, y, 0], k * 3);
+    } else {
+      const q = nearest(x, y);                 // точки снаружи «прилипают» к краю — ровный контур без лесенки
+      pos.set([q.x, q.y, 0], k * 3);
+    }
+  }
+  const front = [], tris = [];
+  for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+    const a = j * nx + i, b = a + 1, c = a + nx, d = c + 1;
+    if (ins[a] + ins[b] + ins[d] > 0) tris.push([a, b, d]);
+    if (ins[a] + ins[d] + ins[c] > 0) tris.push([a, d, c]);
+  }
+  // Лицо и изнанка — две «подушки», сходящиеся по краю
+  const N = nx * ny, P = new Float32Array(N * 6), UV = new Float32Array(N * 4);
+  for (let k = 0; k < N; k++) {
+    const x = pos[k * 3], y = pos[k * 3 + 1];
+    P.set([x, y, hgt[k]], k * 3);
+    P.set([x, y, -hgt[k] * back], (N + k) * 3);
+    UV.set([x, y], k * 2); UV.set([x, y], (N + k) * 2);
+  }
+  for (const [a, b, c] of tris) front.push(a, b, c, N + a, N + c, N + b);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(P, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(UV, 2));
+  if (oxidize) {
+    const C = new Float32Array(N * 6);
+    for (let k = 0; k < N; k++) {
+      const h = Math.min(hgt[k] / T, 1);
+      const v = 1 - oxidize * (1 - Math.pow(h, 0.55));       // выпуклое отполировано, низины тёмные
+      C.set([v, v, v], k * 3);
+      C.set([1 - oxidize * 0.9, 1 - oxidize * 0.9, 1 - oxidize * 0.9], (N + k) * 3);
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(C, 3));
+  }
+  geo.setIndex(front);
+  geo.computeVertexNormals();
+  return { geo, H };
+}
+// Плавный замкнутый контур по опорным точкам
+const outlineOf = (pts, count = 240) =>
+  new THREE.CatmullRomCurve3(pts.map(([x, y]) => V3(x, y, 0)), true, 'centripetal').getSpacedPoints(count).slice(0, -1).map(p => new THREE.Vector2(p.x, p.y));
+// Шов: валик по поверхности ткани
+function seam(parent, H, pts, r, mat, closed = false, lift = 0.6) {
+  const curve = new THREE.CatmullRomCurve3(pts.map(([x, y]) => V3(x, y, 0)), closed, 'centripetal');
+  const sampled = curve.getSpacedPoints(Math.max(24, Math.round(curve.getLength() / 0.02))).map(p => V3(p.x, p.y, H(p.x, p.y) + r * lift));
+  return mesh(parent, new THREE.TubeGeometry(new THREE.CatmullRomCurve3(sampled, closed), sampled.length * 2, r, 10, closed), mat);
+}
+// Принт, повторяющий рельеф ткани
+function printOn(parent, H, w, h, cx, cy, mat, seg = 48) {
+  const geo = new THREE.PlaneGeometry(w, h, seg, seg);
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) p.setZ(i, H(cx + p.getX(i), cy + p.getY(i)) + 0.003);
+  geo.computeVertexNormals();
+  return decal(parent, 0, 0, mat, cx, cy, 0, 0, 0, 0, geo);
+}
+// Плоский ремень вдоль кривой (ручки шопера)
+function strap(parent, pts, width, thick, mat) {
+  const s = new THREE.Shape();
+  // ширина ремня — по бинормали кривой (смотрит на зрителя), толщина — по нормали
+  s.moveTo(-thick / 2, -width / 2); s.lineTo(thick / 2, -width / 2); s.lineTo(thick / 2, width / 2); s.lineTo(-thick / 2, width / 2);
+  const geo = new THREE.ExtrudeGeometry(s, { steps: 120, bevelEnabled: false, extrudePath: new THREE.CatmullRomCurve3(pts) });
+  geo.computeVertexNormals();
+  return mesh(parent, geo, mat);
+}
+
+function productShopper() {
+  const fm = fromModel('shopper', [0.04, -0.32, 0]);
+  if (fm) return fm;
+  const g = new THREE.Group();
+  const W = 1.1, Hh = 1.25;
+  // Прямой крой с чуть скруглёнными углами, как у настоящего шопера
+  const rr = new THREE.Shape();
+  const cr = 0.035;
+  rr.moveTo(-W + cr, -Hh); rr.lineTo(W - cr, -Hh); rr.quadraticCurveTo(W, -Hh, W, -Hh + cr);
+  rr.lineTo(W, Hh - cr); rr.quadraticCurveTo(W, Hh, W - cr, Hh); rr.lineTo(-W + cr, Hh);
+  rr.quadraticCurveTo(-W, Hh, -W, Hh - cr); rr.lineTo(-W, -Hh + cr); rr.quadraticCurveTo(-W, -Hh, -W + cr, -Hh);
+  const outline = rr.getSpacedPoints(420).slice(0, -1);
+  const wr = (x, y) => 0.006 * Math.sin(x * 3.1 + y * 2.3) + 0.004 * Math.sin(-x * 4.7 + y * 5.1 + 1.3) + 0.01 * Math.exp(-((x - 0.3) ** 2) * 6) * Math.sin(y * 7);
+  const { geo, H } = garment(outline, { T: 0.032, R: 0.09, step: 0.012, wrinkle: wr });
+  mesh(g, geo, cotton);
+  // Подгиб верха и боковые строчки
+  seam(g, H, [[-1.05, 1.1], [0, 1.1], [1.05, 1.1]], 0.008, cotton);
+  for (const sx of [-1, 1]) seam(g, H, [[sx * 1.02, 1.08], [sx * 1.02, 0], [sx * 1.02, -1.18]], 0.006, cotton);
+  // Плоские ручки + прямоугольные нашивки с крестиком строчки
+  for (const side of [1, -1]) {
+    const z0 = side * (0.05 + 0.01);
+    strap(g, [V3(-0.5, 0.85, z0), V3(-0.52, 1.3, z0), V3(-0.38, 2.1, z0 * 0.7), V3(0, 2.38, z0 * 0.5), V3(0.38, 2.1, z0 * 0.7), V3(0.52, 1.3, z0), V3(0.5, 0.85, z0)], 0.13, 0.018, cotton);
+  }
+  for (const sx of [-0.5, 0.5]) {
+    seam(g, H, [[sx - 0.07, 0.86], [sx + 0.07, 0.86], [sx + 0.07, 1.08], [sx - 0.07, 1.08]], 0.005, cotton, true, 2.2);
+    seam(g, H, [[sx - 0.07, 0.86], [sx + 0.07, 1.08]], 0.004, cotton, false, 2.6);
+  }
+  printOn(g, H, 1.36, 1.7, 0, -0.18, silverInk(T.lockup));
+  g.rotation.set(0.04, -0.32, 0);
+  return g;
+}
+
+// Живое пламя над фитилём: шейдер с шумом, загорается, когда зажигалка выходит на свой экран
+const flameVert = `
+  varying vec2 vUv;
+  void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+const flameFrag = `
+  uniform float uTime, uHeat;
+  varying vec2 vUv;
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+  }
+  void main() {
+    float y = vUv.y, x = vUv.x - 0.5;
+    float n = noise(vec2(x * 4.0, y * 5.0 - uTime * 4.0)) * 0.6 + noise(vec2(x * 9.0, y * 11.0 - uTime * 7.0)) * 0.4;
+    float sway = sin(y * 5.0 + uTime * 6.0) * 0.035 * y + (n - 0.5) * 0.06 * y;
+    float width = mix(0.24, 0.015, pow(y, 1.25)) * (0.85 + 0.3 * n);
+    float d = abs(x + sway) / width;
+    float body = smoothstep(1.0, 0.25, d) * smoothstep(0.0, 0.07, y) * smoothstep(1.0, 0.45, y + (n - 0.5) * 0.25);
+    vec3 col = mix(vec3(0.95, 0.32, 0.03), vec3(1.0, 0.86, 0.45), smoothstep(0.7, 0.0, d) * smoothstep(0.85, 0.15, y));
+    col = mix(vec3(0.25, 0.45, 1.0), col, smoothstep(0.02, 0.2, y));          // синий низ пламени
+    float a = clamp(body * 1.6, 0.0, 1.0) * uHeat;
+    if (a < 0.01) discard;
+    gl_FragColor = vec4(col * 0.9, a);
+  }`;
+function addFlame(inner) {
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uTime: { value: 0 }, uHeat: { value: 0 } },
+    vertexShader: flameVert, fragmentShader: flameFrag, transparent: true, depthWrite: false, side: THREE.DoubleSide, toneMapped: false,
+  });
+  const H = 0.75, baseY = 0.555;   // верх фитиля в координатах модели
+  const flame = new THREE.Mesh(new THREE.PlaneGeometry(0.4, H), mat);
+  flame.userData.noFade = true;
+  flame.position.set(-0.1, baseY + H / 2, 0);
+  flame.layers.set(1);            // не участвует в мягких тенях (AO)
+  const glow = new THREE.PointLight(0xff9a4a, 0, 3, 2);
+  glow.position.set(-0.1, baseY + 0.18, 0.05);
+  const model = inner.children[0];
+  model.add(flame, glow);
+  let heat = 0;
+  const q = new THREE.Quaternion();
+  return (t, fade, dt) => {
+    heat += ((fade > 0.85 ? 1 : 0) - heat) * (1 - Math.exp(-dt * (fade > 0.85 ? 2.2 : 6)));
+    const flick = 0.85 + 0.15 * Math.sin(t * 23) * Math.sin(t * 7.3 + 1);
+    mat.uniforms.uTime.value = t;
+    mat.uniforms.uHeat.value = heat * fade;
+    flame.visible = heat * fade > 0.01;
+    flame.scale.set(1, 0.4 + 0.6 * heat, 1);
+    flame.position.y = baseY + (H * flame.scale.y) / 2;
+    glow.intensity = 1.6 * heat * fade * flick;
+    // пламя всегда смотрит в камеру и тянется вверх
+    flame.parent.getWorldQuaternion(q).invert();
+    flame.quaternion.copy(q).multiply(camera.quaternion);
+  };
+}
+
+function productLighter() {
+  if (MODELS.lighter) {
+    const g = new THREE.Group();
+    g.add(useModel('lighter', metalP));
+    g.rotation.set(0.22, -0.6, 0);
+    g.userData.afterFit = addFlame;   // пламя добавляем после вписывания в габарит, чтобы не уменьшать зажигалку
+    return g;
+  }
+  const g = new THREE.Group();
+  const W = 0.78, D = 0.44, HB = 1.02, HL = 0.5;
+  const steel = new THREE.MeshPhysicalMaterial({ color: 0xb4b4ba, metalness: 1, roughness: 0.42, roughnessMap: maps.rough, bumpMap: maps.bump, bumpScale: 0.2 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 1, polygonOffset: true, polygonOffsetFactor: -3 });
+  // Корпус и крышка на петле, откинутая назад
+  mesh(g, rbox(W, HB, D, 0.075, 8), metalP, 0, -HB / 2, 0);
+  const pivot = new THREE.Group();
+  pivot.position.set(0, 0.0, -D / 2);
+  pivot.rotation.x = -1.95;
+  g.add(pivot);
+  mesh(pivot, rbox(W, HL, D, 0.075, 8), metalP, 0, HL / 2, D / 2);
+  decal(pivot, W - 0.08, D - 0.08, dark, 0, -0.002, D / 2, Math.PI / 2);          // внутренность крышки
+  const hinge = mesh(g, new THREE.CylinderGeometry(0.034, 0.034, 0.26, 32), metalP, 0, -0.01, -D / 2 - 0.012);
+  hinge.rotation.z = Math.PI / 2;
+  // Стальная вставка: площадка, ветрозащита с отверстиями, фитиль, колёсико
+  mesh(g, rbox(W - 0.05, 0.05, D - 0.05, 0.015, 3), steel, 0, 0.01, 0);
+  const chW = 0.42, chH = 0.48, chD = 0.3, chX = -0.1, chY = 0.035 + 0.48 / 2;
+  mesh(g, rbox(chW, chH, chD, 0.015, 3), steel, chX, chY, 0);
+  const holes = canvasTex(512, 512, (c, w, h) => {
+    c.fillStyle = '#000'; c.fillRect(0, 0, w, h); c.fillStyle = '#fff';
+    for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) { c.beginPath(); c.arc(80 + k * 117, 90 + r * 108, 34, 0, TAU); c.fill(); }
+  });
+  const holeMat = new THREE.MeshStandardMaterial({ ...decalBase, color: 0x060606, roughness: 1, alphaMap: holes });
+  for (const s of [1, -1]) decal(g, chW - 0.06, chH - 0.1, holeMat, chX, chY + 0.02, s * (chD / 2 + 0.001), 0, s > 0 ? 0 : Math.PI);
+  decal(g, chW - 0.03, chD - 0.03, dark, chX, chY + chH / 2 + 0.001, 0, -Math.PI / 2);   // открытый верх
+  mesh(g, new THREE.CylinderGeometry(0.036, 0.04, 0.09, 24), new THREE.MeshStandardMaterial({ color: 0xd8c9a8, roughness: 1 }), chX, chY + chH / 2 + 0.02, 0);
+  const knurl = canvasTex(256, 16, (c, w, h) => {
+    c.fillStyle = '#808080'; c.fillRect(0, 0, w, h);
+    for (let x = 0; x < w; x += 4) { c.fillStyle = '#3a3a3a'; c.fillRect(x, 0, 2, h); }
+  });
+  const wheelMat = steel.clone(); wheelMat.bumpMap = knurl; wheelMat.bumpScale = 2;
+  const wheel = mesh(g, new THREE.CylinderGeometry(0.085, 0.085, 0.13, 72), wheelMat, 0.2, chY + chH / 2 - 0.05, 0);
+  wheel.rotation.x = Math.PI / 2;
+  for (const z of [0.09, -0.09]) mesh(g, rbox(0.24, 0.3, 0.03, 0.01, 2), steel, 0.17, chY + 0.08, z);
+  mesh(g, rbox(0.12, 0.06, 0.2, 0.02, 2), steel, 0.32, 0.07, 0);                   // кулачок крышки
+  // Гравировка с чернением на лицевой стороне корпуса
+  const engrave = tex => new THREE.MeshStandardMaterial({ ...decalBase, color: 0x46464b, metalness: 0.9, roughness: 0.55, alphaMap: tex });
+  decal(g, 0.5, 0.5, engrave(T.mark), 0, -0.4, D / 2 + 0.001);
+  decal(g, 0.52, 0.18, engrave(T.word), 0, -0.83, D / 2 + 0.001);
+  g.rotation.set(0.28, -0.6, 0);
+  return g;
+}
+
+function productBox() {
+  const fm = fromModel('box', [0.38, -0.55, 0]);
+  if (fm) {
+    const ring = productRing();
+    ring.scale.setScalar(0.42);
+    ring.rotation.set(-0.25, 0, 0);
+    ring.position.set(0, 0.86, 0);
+    fm.children[0].add(ring);
+    return fm;
+  }
+  const g = new THREE.Group();
+  mesh(g, rbox(1.8, 0.9, 1.8, 0.05), softTouch);
+  mesh(g, rbox(1.64, 0.3, 1.64, 0.12), velvet, 0, 0.36, 0);
+  mesh(g, new THREE.BoxGeometry(1.2, 0.05, 0.06), new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 1 }), 0, 0.51, 0);
+  const ring = productRing();
+  ring.scale.setScalar(0.42);
+  ring.rotation.set(-0.25, 0, 0);
+  ring.position.set(0, 0.86, 0);
+  g.add(ring);
+  // Крышка на петле сзади, открыта
+  const pivot = new THREE.Group();
+  pivot.position.set(0, 0.45, -0.9);
+  pivot.rotation.x = -1.95;
+  g.add(pivot);
+  mesh(pivot, rbox(1.84, 0.28, 1.84, 0.05), softTouch, 0, 0.14, 0.92);
+  decal(pivot, 1.62, 1.62, velvet, 0, -0.003, 0.92, Math.PI / 2);
+  decal(pivot, 0.72, 0.72, foil(T.mark), 0, -0.006, 0.92, Math.PI / 2, 0, Math.PI);
+  decal(g, 0.92, 0.32, foil(T.word), 0, 0, 0.902);
+  g.rotation.set(0.38, -0.55, 0);
+  return g;
+}
+
+function productPouch() {
+  const fm = fromModel('pouch', [0.1, 0.15, 0]);
+  if (fm) return fm;
+  const g = new THREE.Group();
+  const prof = [[0.001, -1], [0.45, -1], [0.75, -0.93], [0.92, -0.65], [0.98, -0.2], [0.92, 0.3], [0.7, 0.72], [0.42, 0.98], [0.3, 1.08], [0.36, 1.2], [0.48, 1.32], [0.52, 1.42]]
+    .map(([r, h]) => new THREE.Vector2(r, h));
+  const geo = new THREE.LatheGeometry(prof, 200);
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const th = Math.atan2(x, z);
+    const k = y > 1.05 ? 1 + 0.13 * Math.sin(th * 13) * Math.min(1, (y - 1.05) * 4) : 1 + 0.02 * Math.sin(th * 6 + y * 2.5);
+    p.setX(i, x * k); p.setZ(i, z * k);
+  }
+  geo.computeVertexNormals();
+  mesh(g, geo, velvet);
+  const knot = mesh(g, new THREE.TorusGeometry(0.33, 0.032, 20, 96), cord, 0, 1.07, 0);
+  knot.rotation.x = Math.PI / 2;
+  const tails = [
+    [V3(0.18, 1.06, 0.27), V3(0.3, 0.85, 0.6), V3(0.34, 0.45, 0.92), V3(0.3, 0.12, 1.02)],
+    [V3(0.1, 1.06, 0.29), V3(0.1, 0.8, 0.66), V3(0.06, 0.42, 0.97), V3(0.0, 0.18, 1.03)],
+  ];
+  for (const t of tails) {
+    mesh(g, tube(t, 0.026, false, 80, 12), cord);
+    const e = t[t.length - 1];
+    mesh(g, new THREE.SphereGeometry(0.065, 32, 16), metalP, e.x, e.y - 0.04, e.z);
+  }
+  const a = -0.42, r = 0.99;
+  decal(g, 0.42, 0.42, foil(T.mark), Math.sin(a) * r, -0.3, Math.cos(a) * r, 0, a);
+  g.rotation.set(0.1, 0.15, 0);
+  return g;
+}
+
+function productLookbook() {
+  const fm = fromModel('lookbook', [0.05, -0.55, 0]);
+  if (fm) return fm;
+  const g = new THREE.Group();
+  mesh(g, rbox(1.9, 2.6, 0.05, 0.015, 4), softTouch, 0, 0, 0.21);
+  mesh(g, rbox(1.9, 2.6, 0.05, 0.015, 4), softTouch, 0, 0, -0.21);
+  mesh(g, rbox(0.07, 2.6, 0.47, 0.025, 4), softTouch, -0.93, 0, 0);
+  const pages = new THREE.MeshStandardMaterial({ map: pagesTex(), roughness: 0.95 });
+  mesh(g, new THREE.BoxGeometry(1.82, 2.5, 0.37), pages, 0.02, 0, 0);
+  const z = 0.236;
+  decal(g, 0.6, 0.6, foil(T.mark), 0, 0.6, z);
+  decal(g, 1.25, 0.44, foil(T.word), 0, -0.15, z);
+  decal(g, 1.25, 0.078, ink(T.bookLine, 0x8d8d92), 0, -0.95, z);
+  g.rotation.set(0.05, -0.55, 0);
+  return g;
+}
+
+function productCertificate() {
+  const fm = fromModel('certificate', [-0.08, -0.3, 0.03]);
+  if (fm) return fm;
+  const g = new THREE.Group();
+  const env = mesh(g, rbox(1.95, 1.4, 0.03, 0.02, 2), softTouch, 0.3, -0.5, -0.08);
+  env.rotation.z = 0.14;
+  decal(env, 0.9, 0.32, foil(T.word), 0.35, -0.38, 0.016);
+  const card = new THREE.Group();
+  card.rotation.z = -0.05;
+  g.add(card);
+  mesh(card, rbox(1.5, 2.1, 0.02, 0.008, 2), paper);
+  decal(card, 1.5, 2.1, printed(T.cert), 0, 0, 0.0105);
+  const holo = mesh(card, new THREE.CylinderGeometry(0.17, 0.17, 0.012, 64), hologram, 0.47, -0.77, 0.014);
+  holo.rotation.x = Math.PI / 2;
+  g.rotation.set(-0.08, -0.3, 0.03);
+  return g;
+}
+
+function productCards() {
+  const fm = fromModel('cards', [0, -0.35, 0]);
+  if (fm) return fm;
+  const g = new THREE.Group();
+  const geo = rbox(1.8, 1.0, 0.035, 0.03, 3);
+  const back = new THREE.Group();
+  back.position.set(-0.3, -0.4, -0.08); back.rotation.z = 0.16;
+  g.add(back);
+  mesh(back, geo, paper);
+  decal(back, 1.8, 1.0, printed(T.cardBack), 0, 0, 0.0185);
+  const front = new THREE.Group();
+  front.position.set(0.18, 0.22, 0.05); front.rotation.z = -0.07;
+  g.add(front);
+  mesh(front, geo, softTouch);
+  decal(front, 1.5, 0.834, foil(T.lockupH), 0, 0, 0.0185);
+  g.rotation.set(0, -0.35, 0);
+  return g;
+}
+
+function productBag() {
+  const fm = fromModel('bag', [0.12, -0.5, 0]);
+  if (fm) return fm;
+  const g = new THREE.Group();
+  mesh(g, rbox(1.8, 2.2, 0.75, 0.015, 4), kraft);
+  decal(g, 1.74, 0.69, new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 1, polygonOffset: true, polygonOffsetFactor: -3 }), 0, 1.101, 0, -Math.PI / 2);
+  for (const z of [0.3, -0.3]) {
+    const curve = new THREE.QuadraticBezierCurve3(V3(-0.42, 1.08, z), V3(0, 1.95, z), V3(0.42, 1.08, z));
+    mesh(g, new THREE.TubeGeometry(curve, 80, 0.028, 14, false), cord);
+  }
+  decal(g, 1.0, 1.25, foil(T.lockup), 0, -0.1, 0.377);
+  // Сгибы боковин (гармошка пакета)
+  const crease = new THREE.MeshStandardMaterial({ color: 0x070707, roughness: 1, polygonOffset: true, polygonOffsetFactor: -3 });
+  for (const sx of [-1, 1]) decal(g, 0.012, 2.0, crease, sx * 0.901, 0.08, 0, 0, sx * Math.PI / 2);
+  g.rotation.set(0.12, -0.5, 0);
+  return g;
+}
+
+// Вписываем любое изделие в одинаковый габарит и центрируем
+function fit(obj, size) {
+  obj.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(obj);
+  const s = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  obj.position.sub(c);
+  const pivot = new THREE.Group();
+  pivot.add(obj);
+  pivot.scale.setScalar(size / Math.max(s.x, s.y, s.z));
+  const holder = new THREE.Group();
+  holder.add(pivot);
+  return holder;
+}
+const enableShadows = o => o.traverse(m => { if (m.isMesh && !m.userData.noFade) { m.castShadow = true; m.receiveShadow = !m.material.alphaMap && !m.material.transparent; } });
+
+// =====================================================================
+//  Проявление «по срезу»: объект собирается снизу вверх, по линии среза идёт
+//  светящаяся кромка с шумом (как раскалённый металл / сканирование).
+//  Работает через discard в шейдере — без прозрачности и её артефактов.
+// =====================================================================
+const DISSOLVE_GLSL = `
+  uniform float uCut, uHeat, uNoise;
+  uniform vec3 uOrigin, uEdgeColor, uHeatColor;
+  varying vec3 vDisWorld;
+  float dHash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+  float dNoise(vec3 x) {
+    vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(dHash(i), dHash(i + vec3(1,0,0)), f.x), mix(dHash(i + vec3(0,1,0)), dHash(i + vec3(1,1,0)), f.x), f.y),
+               mix(mix(dHash(i + vec3(0,0,1)), dHash(i + vec3(1,0,1)), f.x), mix(dHash(i + vec3(0,1,1)), dHash(i + vec3(1,1,1)), f.x), f.y), f.z);
+  }`;
+function patchDissolve(mat, U) {
+  mat.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, U);
+    sh.vertexShader = 'varying vec3 vDisWorld;\n' + sh.vertexShader.replace('#include <project_vertex>', `#include <project_vertex>
+      vec4 dw = vec4(transformed, 1.0);
+      #ifdef USE_INSTANCING
+        dw = instanceMatrix * dw;
+      #endif
+      vDisWorld = (modelMatrix * dw).xyz;`);
+    sh.fragmentShader = DISSOLVE_GLSL + '\n' + sh.fragmentShader
+      .replace('void main() {', `void main() {
+        vec3 dRel = vDisWorld - uOrigin;
+        float dY = dRel.y + (dNoise(dRel * 6.0) - 0.5) * uNoise + (dNoise(dRel * 19.0) - 0.5) * uNoise * 0.35;
+        if (dY > uCut) discard;
+        float dEdge = 1.0 - smoothstep(0.0, 0.035, uCut - dY);
+        float dBand = uCut < 50.0 ? 1.0 - smoothstep(0.02, 0.2, uCut - dY) : 0.0;`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        diffuseColor.rgb *= 1.0 - dBand * 0.85;   // опалённая полоса под кромкой`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        float dFresh = uCut < 50.0 ? exp(-max(uCut - dY, 0.0) * 2.2) : 0.0;   // свежезалитое — горячее
+        totalEmissiveRadiance += uEdgeColor * dEdge * 5.0 + uHeatColor * uHeat * (0.12 + 1.5 * dFresh);`);
+  };
+  mat.customProgramCacheKey = () => 'dissolve';
+  mat.needsUpdate = true;
+}
+const EDGE_SILVER = new THREE.Color(1.0, 0.78, 0.45);
+const EDGE_MOLTEN = new THREE.Color(1.0, 0.26, 0.02);
+
+// У каждого объекта — свои копии материалов и свой срез
+function ownMaterials(o, clone = true) {
+  const map = new Map(), meshes = [];
+  o.traverse(m => {
+    if (!m.isMesh || m.userData.noFade) return;
+    if (!map.has(m.material)) map.set(m.material, clone ? m.material.clone() : m.material);
+    m.material = map.get(m.material);
+    meshes.push(m);
+  });
+  const U = {
+    uCut: { value: 99 }, uOrigin: { value: new THREE.Vector3() }, uNoise: { value: 0.35 },
+    uEdgeColor: { value: EDGE_SILVER.clone() }, uHeatColor: { value: new THREE.Color(0, 0, 0) }, uHeat: { value: 0 },
+  };
+  for (const m of map.values()) patchDissolve(m, U);
+  // границы по высоте относительно центра объекта — от них считается срез
+  const box = new THREE.Box3().setFromObject(o);
+  o.userData.fade = { meshes, value: 1, U, lo: box.min.y - o.position.y - 0.35, hi: box.max.y - o.position.y + 0.35, cut: 99 };
+}
+const easeCut = t => t * t * (3 - 2 * t);
+function setFade(o, v) {
+  const f = o.userData.fade;
+  f.U.uOrigin.value.copy(o.position);
+  if (Math.abs(f.value - v) < 0.0005) return;
+  f.value = v;
+  f.cut = v >= 0.999 ? 99 : THREE.MathUtils.lerp(f.lo, f.hi, easeCut(v));
+  f.U.uCut.value = f.cut;
+  for (const m of f.meshes) {
+    m.layers.set(v > 0.97 ? 0 : 1);
+    m.castShadow = v > 0.3;
+  }
+}
+
+// =====================================================================
+//  Сцена: логотип + изделия
+// =====================================================================
+const logo = new THREE.Group();
+const word = new THREE.Group();
+scene.add(logo);
+logo.add(word);
+const productObjs = [];
+
+function buildScene(font) {
+  logo.add(buildMark(font, metal));
+  mesh(word, textGeo(font, 'Blago', 1.05, 0.3, 0.045, 0.012), metal, 0, -2.75, 0);
+  enableShadows(logo);
+  ownMaterials(logo, false);   // материалы логотипа и так только его (у изделий — свои копии)
+  PRODUCTS.forEach(p => {
+    const inner = p.build(font);
+    const h = fit(inner, 3.3);
+    if (inner.userData.afterFit) h.userData.tick = inner.userData.afterFit(inner);
+    h.visible = false;
+    enableShadows(h);
+    ownMaterials(h);
+    setFade(h, 0);
+    scene.add(h);
+    productObjs.push(h);
+  });
+}
+
+
+// =====================================================================
+//  Искры при заливке: частицы вылетают из линии «расплава» и падают
+// =====================================================================
+const SPARK_N = 360;
+const sparkPos = new Float32Array(SPARK_N * 3), sparkLife = new Float32Array(SPARK_N);
+const sparkVel = new Float32Array(SPARK_N * 3), sparkDur = new Float32Array(SPARK_N);
+const sparkGeo = new THREE.BufferGeometry();
+sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
+sparkGeo.setAttribute('aLife', new THREE.BufferAttribute(sparkLife, 1));
+const sparkMat = new THREE.ShaderMaterial({
+  uniforms: { uSize: { value: 38 * Math.min(devicePixelRatio, 2) } },
+  vertexShader: `uniform float uSize; attribute float aLife; varying float vL;
+    void main() { vL = aLife; vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      gl_PointSize = uSize * (0.35 + aLife) / -mv.z; gl_Position = projectionMatrix * mv; }`,
+  fragmentShader: `varying float vL;
+    void main() { float d = length(gl_PointCoord - 0.5); if (d > 0.5 || vL <= 0.0) discard;
+      gl_FragColor = vec4(mix(vec3(0.95, 0.3, 0.04), vec3(1.0, 0.92, 0.65), vL), smoothstep(0.5, 0.0, d) * vL); }`,
+  transparent: true, depthWrite: false, toneMapped: false,
+});
+const sparkPts = new THREE.Points(sparkGeo, sparkMat);
+sparkPts.frustumCulled = false;
+sparkPts.layers.set(1);
+scene.add(sparkPts);
+let sparkNext = 0;
+function emitSparks(n, x0, x1, y, z) {
+  for (let k = 0; k < n; k++) {
+    const i = sparkNext++ % SPARK_N;
+    sparkPos.set([x0 + Math.random() * (x1 - x0), y, z + Math.random() * 0.25], i * 3);
+    sparkVel.set([(Math.random() - 0.5) * 2.6, 0.8 + Math.random() * 2.8, 0.3 + Math.random() * 1.4], i * 3);
+    sparkLife[i] = 1;
+    sparkDur[i] = 0.5 + Math.random() * 0.8;
+  }
+}
+function updateSparks(dt) {
+  for (let i = 0; i < SPARK_N; i++) {
+    if (sparkLife[i] <= 0) continue;
+    sparkVel[i * 3 + 1] -= 7 * dt;
+    sparkPos[i * 3] += sparkVel[i * 3] * dt;
+    sparkPos[i * 3 + 1] += sparkVel[i * 3 + 1] * dt;
+    sparkPos[i * 3 + 2] += sparkVel[i * 3 + 2] * dt;
+    sparkLife[i] = Math.max(0, sparkLife[i] - dt / sparkDur[i]);
+  }
+  sparkGeo.attributes.position.needsUpdate = true;
+  sparkGeo.attributes.aLife.needsUpdate = true;
+}
+
+// =====================================================================
+//  Кадры: на каждый экран — положение логотипа и камеры
+// =====================================================================
+const sections = [...document.querySelectorAll('section')];
+const narrow = () => innerWidth < 760;
+// Смещение в сторону = середина половины экрана: предмет не вылезает за край на любом окне
+const sideX = () => Math.min(2.6, 12.5 * Math.tan(THREE.MathUtils.degToRad(15)) * (innerWidth / innerHeight) * 0.5);
+function poseFor(name) {
+  const n = narrow(), side = n ? 0 : sideX(), far = n ? 24 : 15.5, mid = n ? 17 : 12.5, lift = n ? 1.6 : 0;
+  const P = {
+    hero:       { x: 0, y: 0.9 + lift * 0.6, rot: 0, rx: 0, cam: [0, 0.2, far + 1.5], look: [0, -0.9], word: 0, ox: 0, vis: 1 },
+    idea:       { x: side, y: 0.2 + lift, rot: -0.7, rx: 0.05, cam: [0, 0, mid], look: [0, 0], word: 0, ox: 0, vis: 1 },
+    sign:       { x: 0.2, y: lift * 0.4, rot: 0.35, rx: -0.1, cam: [0.9, 0.35, 3.5], look: [0.5, 0.1], word: 0, ox: 0, vis: 1 },
+    material:   { x: 0, y: lift * 0.4, rot: -0.28, rx: 0.12, cam: [-1.0, 1.35, 3.3], look: [-0.15, 1.05], word: 0, ox: 1, vis: 1 },
+    collection: { x: -side, y: 0.2 + lift, rot: 0.75, rx: 0.05, cam: [0, 0, mid], look: [0, 0], word: 0, ox: 1, vis: 1 },
+    product:    { x: -side, y: 0.2 + lift, rot: 1.6, rx: 0.05, cam: [0, 0, mid], look: [0, 0], word: 0, ox: 0, vis: 0 },
+    final:      { x: 0, y: 1.15 + lift * 0.5, rot: TAU, rx: 0, cam: [0, 0.2, far + 2], look: [0, -0.9 - lift * 0.3], word: 1, ox: 0, vis: 1 },
+  };
+  return P[name];
+}
+let POSES = [];
+const productSection = [];   // индекс экрана для каждого изделия
+function buildPoses() {
+  POSES = sections.map(s => poseFor(s.dataset.pose));
+  sections.forEach((s, i) => { if (s.dataset.product !== undefined) productSection[+s.dataset.product] = i; });
+}
+buildPoses();
+
+const lerp = THREE.MathUtils.lerp;
+const smoothstep = (a, b, t) => { const x = Math.min(Math.max((t - a) / (b - a), 0), 1); return x * x * (3 - 2 * x); };
+function poseAt(i) {
+  const a = Math.min(Math.floor(i), POSES.length - 1), b = Math.min(a + 1, POSES.length - 1);
+  const t = smoothstep(0.12, 0.88, i - a);
+  const A = POSES[a], B = POSES[b];
+  const out = {};
+  for (const k of ['x', 'y', 'rot', 'rx', 'word', 'ox', 'vis']) out[k] = lerp(A[k], B[k], t);
+  out.cam = A.cam.map((v, k) => lerp(v, B.cam[k], t));
+  out.look = A.look.map((v, k) => lerp(v, B.look[k], t));
+  return out;
+}
+
+// =====================================================================
+//  Прокрутка
+// =====================================================================
+const scroller = document.getElementById('scroller');
+const spacer = document.getElementById('spacer');
+let tops = [];
+function layout() {
+  spacer.style.height = scroller.offsetHeight + 'px';
+  tops = sections.map(s => s.offsetTop);
+}
+let smoothY = scrollY;
+function sectionIndex(y) {
+  for (let k = tops.length - 1; k >= 0; k--) {
+    if (y >= tops[k]) {
+      const next = k + 1 < tops.length ? tops[k + 1] : tops[k] + 1;
+      return Math.min(k + (y - tops[k]) / (next - tops[k]), tops.length - 1);
+    }
+  }
+  return 0;
+}
+document.querySelectorAll('[data-jump]').forEach(a => a.addEventListener('click', e => {
+  e.preventDefault();
+  scrollTo(0, tops[productSection[+a.dataset.jump]]);
+}));
+
+const reveals = [...document.querySelectorAll('.reveal')];
+function updateReveals() {
+  // Текст проявляется при входе в кадр и снова прячется, когда ушёл, — при возврате анимация повторится
+  for (const el of reveals) {
+    const r = el.getBoundingClientRect();
+    if (r.top < innerHeight * 0.82 && r.bottom > innerHeight * 0.12) el.classList.add('in');
+    else if (r.bottom < -40 || r.top > innerHeight + 40) el.classList.remove('in');
+  }
+}
+const fill = document.getElementById('fill');
+const num = document.getElementById('num');
+document.getElementById('total').textContent = String(sections.length).padStart(2, '0');
+
+// =====================================================================
+//  Анимация
+// =====================================================================
+const mouse = new THREE.Vector2();
+addEventListener('pointermove', e => mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1));
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight, false);
+  composer.setSize(innerWidth, innerHeight);
+  buildPoses();
+  layout();
+});
+
+const INTRO = { cam: [1.1, 0.6, 3.1], look: [0.1, 0.15] };
+let introStart = null;
+const clock = new THREE.Clock();
+let scrollVel = 0;
+const look = new THREE.Vector3();
+const ease = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+// Плавный ход изделия: на своём экране стоит, на подходе мягко разгоняется/тормозит
+const glide = d => Math.sign(d) * smoothstep(0.1, 1.0, Math.abs(d));
+
+function tick(now) {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+
+  smoothY += (scrollY - smoothY) * (1 - Math.exp(-dt * 3.4));   // мягкая инерция прокрутки
+  if (Math.abs(scrollY - smoothY) < 0.05) smoothY = scrollY;
+  // «Физика» прокрутки: чем быстрее листаешь, тем сильнее текст и предметы инерционно наклоняются
+  const vTarget = THREE.MathUtils.clamp((scrollY - smoothY) / 700, -1, 1);
+  scrollVel += (vTarget - scrollVel) * (1 - Math.exp(-dt * 6));
+  scroller.style.transform = `translate3d(0, ${-smoothY}px, 0) skewY(${(scrollVel * -3.2).toFixed(3)}deg)`;
+  updateReveals();
+
+  const i = sectionIndex(smoothY + 1);
+  const p = poseAt(i);
+  fill.style.transform = `scaleY(${i / (sections.length - 1)})`;
+  num.textContent = String(Math.min(Math.round(i) + 1, sections.length)).padStart(2, '0');
+
+  // Логотип: растворяется и чуть уплывает вверх, а не схлопывается
+  logo.visible = p.vis > 0.003;
+  setFade(logo, p.vis);
+  logo.scale.setScalar(0.9 + 0.1 * p.vis);
+  logo.position.x += (p.x - logo.position.x) * 0.12;
+  logo.position.y = p.y + (1 - p.vis) * 1.2 + Math.sin(t * 0.6) * 0.04;
+  logo.rotation.y = p.rot + Math.sin(t * 0.25) * 0.06 + mouse.x * 0.08;
+  logo.rotation.x = p.rx - mouse.y * 0.04 + scrollVel * 0.45;
+  word.scale.setScalar(Math.max(p.word, 0.0001));
+  word.position.y = (1 - p.word) * -0.6;
+  metal.color.lerpColors(SILVER.color, OXIDIZED.color, p.ox);
+  metal.roughness = lerp(SILVER.roughness, OXIDIZED.roughness, p.ox);
+  const mo = oxOf(metal);
+  mo.color.copy(metal.color);
+  mo.roughness = metal.roughness;
+
+  // Вступление «литьё»: серебро заливается снизу вверх с раскалённой кромкой и искрами, затем остывает
+  if (introStart !== null && logo.userData.fade) {
+    const it = (now - introStart) / 1000, f = logo.userData.fade, U = f.U;
+    const pour = Math.min(Math.max((it - 0.2) / 2.8, 0), 1);
+    const castCut = pour >= 1 ? 99 : THREE.MathUtils.lerp(f.lo, f.hi, 1 - Math.pow(1 - pour, 2.2));
+    U.uCut.value = Math.min(f.cut, castCut);
+    const heat = it < 3.0 ? 1 : Math.exp(-(it - 3.0) * 2.0);
+    U.uHeat.value = heat;
+    U.uHeatColor.value.copy(EDGE_MOLTEN);
+    U.uEdgeColor.value.copy(EDGE_SILVER).lerp(EDGE_MOLTEN, Math.min(1, heat * 1.2));
+    if (pour < 1) {
+      for (const m of f.meshes) m.layers.set(1);
+      emitSparks(5, logo.position.x - 1.7, logo.position.x + 1.7, logo.position.y + castCut, 0.15);
+    } else if (pour >= 1 && !f.cast) {
+      f.cast = true;
+      for (const m of f.meshes) m.layers.set(f.value > 0.97 ? 0 : 1);
+    }
+  }
+  updateSparks(dt);
+
+  // Изделия: каждое живёт на своём экране, медленно поворачивается при прокрутке
+  // Изделия: проявляются, мягко подплывают, на своём экране медленно поворачиваются и растворяются при уходе
+  const n = narrow(), side = n ? 0 : sideX(), travel = n ? 5 : 3.6, baseY = n ? 1.7 : 0;
+  productObjs.forEach((h, k) => {
+    const d = i - productSection[k], a = Math.abs(d);
+    const fade = 1 - smoothstep(0.32, 0.92, a);
+    h.visible = fade > 0.003;
+    if (!h.visible) return;
+    setFade(h, fade);
+    if (h.userData.tick) h.userData.tick(t, fade, dt);
+    const x = k % 2 === 0 ? side : -side;
+    h.position.set(x, baseY + glide(d) * travel, 0);
+    h.rotation.y = d * 0.9 + Math.sin(t * 0.3) * 0.05 + mouse.x * 0.1;
+    h.rotation.x = -mouse.y * 0.05 + scrollVel * 0.5;
+    h.rotation.z = scrollVel * -0.12;
+    h.scale.setScalar(0.9 + 0.1 * (1 - smoothstep(0.15, 1, a)));
+  });
+
+  // Камера
+  const k = introStart === null ? 0 : ease(Math.min((now - introStart) / 5200, 1));
+  camera.position.set(lerp(INTRO.cam[0], p.cam[0], k), lerp(INTRO.cam[1], p.cam[1], k), lerp(INTRO.cam[2], p.cam[2], k));
+  look.set(lerp(INTRO.look[0], p.look[0], k), lerp(INTRO.look[1], p.look[1], k), 0);
+  camera.lookAt(look);
+
+  key.position.x = -4 + Math.sin(t * 0.15) * 2;
+
+  aoCamera.position.copy(camera.position);
+  aoCamera.quaternion.copy(camera.quaternion);
+  aoCamera.aspect = camera.aspect;
+  aoCamera.projectionMatrix.copy(camera.projectionMatrix);
+  aoCamera.projectionMatrixInverse.copy(camera.projectionMatrixInverse);
+  aoCamera.updateMatrixWorld();
+  composer.render();
+  requestAnimationFrame(tick);
+}
+
+// =====================================================================
+//  Старт
+// =====================================================================
+(async () => {
+  layout();
+  try {
+    const [buf] = await Promise.all([
+      fetch(FONT_URL).then(r => r.arrayBuffer()),
+      loadModels(['mark', 'pendant', 'ring', 'lighter', 'carabiner', 'bracelet', 'shopper', 'pouch', 'box', 'lookbook', 'bag', 'certificate', 'cards']),
+      loadTextures(),
+      document.fonts.load('100px UnifrakturMaguntia'),
+      document.fonts.load('300 40px "Cormorant Garamond"'),
+      document.fonts.load('italic 300 40px "Cormorant Garamond"'),
+      document.fonts.load('500 20px Inter'),
+    ]);
+    const font = parseFont(buf);
+    buildPrintTextures();
+    buildScene(font);
+    layout();
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.compile(scene, camera);
+    requestAnimationFrame(tick);
+    setTimeout(() => {
+      document.getElementById('loader').classList.add('hide');
+      introStart = performance.now();
+    }, 300);
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loadtext').textContent = 'Не удалось загрузить — проверь интернет';
+  }
+})();
+document.fonts.ready.then(layout);
+</script>
+</body>
+</html>
