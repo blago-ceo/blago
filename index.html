@@ -105,6 +105,10 @@
     .specs div { grid-template-columns: 100px 1fr; }
   }
 
+  /* Облегчённый режим (телефоны): без размытия под панелями и без анимированного шума — они дорого стоят видеокарте */
+  html.low .grain { animation: none; opacity: .07; }
+  html.low .panel, html.low .side { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(222,222,221,.94); }
+  html.low .reveal > * { filter: none; }
   @media (prefers-reduced-motion: reduce) {
     .grain, .scrollhint .line::after { animation: none; }
     .reveal > *, .reveal .w > span { transition: none; }
@@ -324,8 +328,15 @@ document.querySelectorAll('.reveal h1, .reveal h2').forEach(splitWords);
 //  Рендер, студия, свет
 // =====================================================================
 const canvas = document.getElementById('stage');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+// Профиль качества: телефоны и слабые устройства получают облегчённый режим
+const LOW = matchMedia('(pointer: coarse)').matches || innerWidth < 760 || (navigator.hardwareConcurrency || 8) <= 4;
+const Q = LOW
+  ? { maxDpr: Math.min(devicePixelRatio, 1.5), ao: false, shadow: 1024, lod: 'lo', tx: 'tx/lo', proc: 512, skew: false, follow: 7 }
+  : { maxDpr: Math.min(devicePixelRatio, 2), ao: true, shadow: 2048, lod: 'md', tx: 'tx', proc: 1024, skew: true, follow: 3.4 };
+document.documentElement.classList.toggle('low', LOW);
+let curDpr = Q.maxDpr;
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(curDpr);
 renderer.setSize(innerWidth, innerHeight, false);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 0.95;
@@ -379,11 +390,13 @@ composer.addPass(new RenderPass(scene, camera));
 const aoCamera = camera.clone();
 aoCamera.layers.set(0);
 camera.layers.enable(1);
-const ao = new GTAOPass(scene, aoCamera, innerWidth, innerHeight);
-ao.updateGtaoMaterial({ radius: 0.28, distanceExponent: 1.4, thickness: 1, scale: 1.25, samples: 16, distanceFallOff: 1, screenSpaceRadius: false });
-ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 5, rings: 2, samples: 16 });
-ao.blendIntensity = 0.85;
-composer.addPass(ao);
+const ao = Q.ao ? new GTAOPass(scene, aoCamera, innerWidth, innerHeight) : null;
+if (ao) {
+  ao.updateGtaoMaterial({ radius: 0.28, distanceExponent: 1.4, thickness: 1, scale: 1.25, samples: 16, distanceFallOff: 1, screenSpaceRadius: false });
+  ao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 5, rings: 2, samples: 16 });
+  ao.blendIntensity = 0.85;
+  composer.addPass(ao);
+}
 composer.addPass(new OutputPass());
 
 
@@ -391,7 +404,7 @@ composer.addPass(new OutputPass());
 const key = new THREE.DirectionalLight(0xffffff, 1.6);
 key.position.set(-4, 6, 9);
 key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048);
+key.shadow.mapSize.set(Q.shadow, Q.shadow);
 Object.assign(key.shadow.camera, { left: -9, right: 9, top: 8, bottom: -8, near: 1, far: 30 });
 key.shadow.bias = -0.0003;
 key.shadow.normalBias = 0.02;
@@ -421,7 +434,7 @@ function canvasTex(w, h, draw, { srgb = false, repeat = null } = {}) {
 
 // Металл: зерно литья, мелкие вмятины, царапины; шероховатость с разводами
 function metalMaps() {
-  const bump = canvasTex(1024, 1024, (b, N) => {
+  const bump = canvasTex(Q.proc, Q.proc, (b, N) => {
     b.fillStyle = '#808080'; b.fillRect(0, 0, N, N);
     for (let i = 0; i < 2600; i++) {
       const x = rnd(0, N), y = rnd(0, N), r = rnd(3, 14);
@@ -439,7 +452,7 @@ function metalMaps() {
       b.beginPath(); b.moveTo(x, y); b.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); b.stroke();
     }
   }, { repeat: 0.45 });
-  const rough = canvasTex(1024, 1024, (r, N) => {
+  const rough = canvasTex(Q.proc, Q.proc, (r, N) => {
     r.fillStyle = 'rgb(150,150,150)'; r.fillRect(0, 0, N, N);
     for (let i = 0; i < 40; i++) {
       const x = rnd(0, N), y = rnd(0, N), rad = rnd(60, 220);
@@ -723,7 +736,8 @@ const MODELS = {};
 function loadModels(names) {
   const draco = new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
   const loader = new GLTFLoader().setDRACOLoader(draco);
-  return Promise.all(names.map(n => loader.loadAsync(`assets/${n}.glb`)
+  const HEAVY = new Set(['mark', 'pendant', 'ring', 'carabiner']);   // у тяжёлых есть облегчённые версии
+  return Promise.all(names.map(n => loader.loadAsync(HEAVY.has(n) ? `assets/${Q.lod}/${n}.glb` : `assets/${n}.glb`)
     .then(g => { MODELS[n] = g.scene; })
     .catch(err => console.warn(`${n}.glb не загрузился — процедурная версия`, err))));
 }
@@ -736,7 +750,7 @@ const TX = {};
 const TX_REPEAT = { leather: 2.5, canvas: 3, linen: 2, paper: 1.5, kraft: 1.5 };
 function loadTextures() {
   const L = new THREE.TextureLoader();
-  const one = (file, srgb, rep) => L.loadAsync(`assets/tx/${file}.jpg`).then(t => {
+  const one = (file, srgb, rep) => L.loadAsync(`assets/${Q.tx}/${file}.jpg`).then(t => {
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(rep, rep);
     t.anisotropy = renderer.capabilities.getMaxAnisotropy();
@@ -749,6 +763,7 @@ function loadTextures() {
     .catch(err => console.warn('текстуры не загрузились', err));
 }
 let TEXMAT = null;
+const TEXTURED = new Set(['leather', 'canvas', 'linen', 'softtouch', 'paper', 'kraft', 'thread']);
 function texMaterials() {
   if (TEXMAT) return TEXMAT;
   const t = k => TX[k] || {};
@@ -780,8 +795,8 @@ function matByName(n, o, silver) {
     if (kind === 'ink') return ink(tex, 0x8d8d92);
     if (kind === 'printed') return printed(tex);
   }
-  const tm = texMaterials();
-  if (tm[n]) return tm[n];
+  // текстурные материалы создаём только по требованию — к этому моменту текстуры уже загружены
+  if (TEXTURED.has(n)) return texMaterials()[n];
   const simple = { enamel, onyx, steel: steelMat, engrave: engraveMat, dark: darkMat, wick: wickMat, cord, hologram,
     pages: new THREE.MeshStandardMaterial({ map: pagesTex(), roughness: 0.95 }) };
   if (simple[n]) return simple[n];
@@ -1427,24 +1442,37 @@ const logo = new THREE.Group();
 const word = new THREE.Group();
 scene.add(logo);
 logo.add(word);
-const productObjs = [];
+const productObjs = new Array(PRODUCTS.length);   // заполняется в фоне, пока пользователь смотрит первый экран
 
-function buildScene(font) {
+function buildLogo(font) {
   logo.add(buildMark(font, metal));
   mesh(word, textGeo(font, 'Blago', 1.05, 0.3, 0.045, 0.012), metal, 0, -2.75, 0);
   enableShadows(logo);
   ownMaterials(logo, false);   // материалы логотипа и так только его (у изделий — свои копии)
-  PRODUCTS.forEach(p => {
-    const inner = p.build(font);
+}
+// Подготовка шейдеров без блокировки страницы (если браузер умеет)
+async function warm(obj) {
+  const was = obj.visible;
+  obj.visible = true;
+  try { if (renderer.compileAsync) await renderer.compileAsync(obj, camera, scene); else renderer.compile(obj, camera, scene); }
+  catch (e) { /* не страшно: скомпилируется при первом показе */ }
+  obj.visible = was;
+}
+const nextFrame = () => new Promise(r => requestAnimationFrame(() => r()));
+async function buildProducts(font) {
+  for (let k = 0; k < PRODUCTS.length; k++) {
+    const inner = PRODUCTS[k].build(font);
     const h = fit(inner, 3.3);
     if (inner.userData.afterFit) h.userData.tick = inner.userData.afterFit(inner);
-    h.visible = false;
     enableShadows(h);
     ownMaterials(h);
     setFade(h, 0);
+    h.visible = false;
     scene.add(h);
-    productObjs.push(h);
-  });
+    await warm(h);
+    productObjs[k] = h;
+    await nextFrame();   // по одному изделию за кадр — без заморозки
+  }
 }
 
 
@@ -1539,11 +1567,19 @@ function poseAt(i) {
 //  Прокрутка
 // =====================================================================
 const scroller = document.getElementById('scroller');
+const reveals = [...document.querySelectorAll('.reveal')];
 const spacer = document.getElementById('spacer');
 let tops = [];
+let revealBox = [];
 function layout() {
   spacer.style.height = scroller.offsetHeight + 'px';
   tops = sections.map(s => s.offsetTop);
+  // положения блоков считаем один раз здесь, а не в каждом кадре (чтение раскладки каждый кадр тормозит телефоны)
+  const y0 = typeof smoothY === 'number' ? smoothY : 0;
+  revealBox = reveals.map(el => {
+    const r = el.getBoundingClientRect();
+    return { el, top: r.top + y0, bottom: r.bottom + y0, on: el.classList.contains('in') };
+  });
 }
 let smoothY = scrollY;
 function sectionIndex(y) {
@@ -1560,13 +1596,13 @@ document.querySelectorAll('[data-jump]').forEach(a => a.addEventListener('click'
   scrollTo(0, tops[productSection[+a.dataset.jump]]);
 }));
 
-const reveals = [...document.querySelectorAll('.reveal')];
 function updateReveals() {
   // Текст проявляется при входе в кадр и снова прячется, когда ушёл, — при возврате анимация повторится
-  for (const el of reveals) {
-    const r = el.getBoundingClientRect();
-    if (r.top < innerHeight * 0.82 && r.bottom > innerHeight * 0.12) el.classList.add('in');
-    else if (r.bottom < -40 || r.top > innerHeight + 40) el.classList.remove('in');
+  const H = innerHeight;
+  for (const b of revealBox) {
+    const top = b.top - smoothY, bottom = b.bottom - smoothY;
+    if (!b.on && top < H * 0.82 && bottom > H * 0.12) { b.on = true; b.el.classList.add('in'); }
+    else if (b.on && (bottom < -40 || top > H + 40)) { b.on = false; b.el.classList.remove('in'); }
   }
 }
 const fill = document.getElementById('fill');
@@ -1582,7 +1618,7 @@ addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight, false);
-  composer.setSize(innerWidth, innerHeight);
+  if (ao) composer.setSize(innerWidth, innerHeight);
   buildPoses();
   layout();
 });
@@ -1591,6 +1627,7 @@ const INTRO = { cam: [1.1, 0.6, 3.1], look: [0.1, 0.15] };
 let introStart = null;
 const clock = new THREE.Clock();
 let scrollVel = 0;
+const perf = { acc: 0, n: 0 };
 const look = new THREE.Vector3();
 const ease = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 // Плавный ход изделия: на своём экране стоит, на подходе мягко разгоняется/тормозит
@@ -1600,12 +1637,14 @@ function tick(now) {
   const dt = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
 
-  smoothY += (scrollY - smoothY) * (1 - Math.exp(-dt * 3.4));   // мягкая инерция прокрутки
+  smoothY += (scrollY - smoothY) * (1 - Math.exp(-dt * Q.follow));   // мягкая инерция прокрутки
   if (Math.abs(scrollY - smoothY) < 0.05) smoothY = scrollY;
   // «Физика» прокрутки: чем быстрее листаешь, тем сильнее текст и предметы инерционно наклоняются
   const vTarget = THREE.MathUtils.clamp((scrollY - smoothY) / 700, -1, 1);
   scrollVel += (vTarget - scrollVel) * (1 - Math.exp(-dt * 6));
-  scroller.style.transform = `translate3d(0, ${-smoothY}px, 0) skewY(${(scrollVel * -3.2).toFixed(3)}deg)`;
+  scroller.style.transform = Q.skew
+    ? `translate3d(0, ${-smoothY}px, 0) skewY(${(scrollVel * -3.2).toFixed(3)}deg)`
+    : `translate3d(0, ${-smoothY}px, 0)`;
   updateReveals();
 
   const i = sectionIndex(smoothY + 1);
@@ -1675,13 +1714,31 @@ function tick(now) {
 
   key.position.x = -4 + Math.sin(t * 0.15) * 2;
 
-  aoCamera.position.copy(camera.position);
-  aoCamera.quaternion.copy(camera.quaternion);
-  aoCamera.aspect = camera.aspect;
-  aoCamera.projectionMatrix.copy(camera.projectionMatrix);
-  aoCamera.projectionMatrixInverse.copy(camera.projectionMatrixInverse);
-  aoCamera.updateMatrixWorld();
-  composer.render();
+  if (ao) {
+    aoCamera.position.copy(camera.position);
+    aoCamera.quaternion.copy(camera.quaternion);
+    aoCamera.aspect = camera.aspect;
+    aoCamera.projectionMatrix.copy(camera.projectionMatrix);
+    aoCamera.projectionMatrixInverse.copy(camera.projectionMatrixInverse);
+    aoCamera.updateMatrixWorld();
+    composer.render();
+  } else {
+    renderer.render(scene, camera);
+  }
+
+  // Автоподстройка: если кадры стабильно дольше ~25 мс — понижаем разрешение рендера (не ниже 1×)
+  if (introStart !== null && now - introStart > 6000) {
+    perf.acc += dt; perf.n++;
+    if (perf.n >= 90) {
+      if (perf.acc / perf.n > 0.025 && curDpr > 1) {
+        curDpr = Math.max(1, curDpr - 0.25);
+        renderer.setPixelRatio(curDpr);
+        renderer.setSize(innerWidth, innerHeight, false);
+        if (ao) { composer.setPixelRatio(curDpr); composer.setSize(innerWidth, innerHeight); }
+      }
+      perf.acc = perf.n = 0;
+    }
+  }
   requestAnimationFrame(tick);
 }
 
@@ -1691,10 +1748,10 @@ function tick(now) {
 (async () => {
   layout();
   try {
+    // Сначала только то, что нужно первому экрану — логотип и шрифты
     const [buf] = await Promise.all([
       fetch(FONT_URL).then(r => r.arrayBuffer()),
-      loadModels(['mark', 'pendant', 'ring', 'lighter', 'carabiner', 'bracelet', 'shopper', 'pouch', 'box', 'lookbook', 'bag', 'certificate', 'cards']),
-      loadTextures(),
+      loadModels(['mark']),
       document.fonts.load('100px UnifrakturMaguntia'),
       document.fonts.load('300 40px "Cormorant Garamond"'),
       document.fonts.load('italic 300 40px "Cormorant Garamond"'),
@@ -1702,16 +1759,21 @@ function tick(now) {
     ]);
     const font = parseFont(buf);
     buildPrintTextures();
-    buildScene(font);
+    buildLogo(font);
     layout();
     camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
-    renderer.compile(scene, camera);
+    await warm(logo);
     requestAnimationFrame(tick);
     setTimeout(() => {
       document.getElementById('loader').classList.add('hide');
       introStart = performance.now();
     }, 300);
+    // Изделия и текстуры — в фоне, пока идёт вступление
+    Promise.all([
+      loadModels(['pendant', 'ring', 'lighter', 'carabiner', 'bracelet', 'shopper', 'pouch', 'box', 'lookbook', 'bag', 'certificate', 'cards']),
+      loadTextures(),
+    ]).then(() => buildProducts(font));
   } catch (err) {
     console.error(err);
     document.getElementById('loadtext').textContent = 'Не удалось загрузить — проверь интернет';
