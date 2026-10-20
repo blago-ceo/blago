@@ -1763,7 +1763,8 @@ function tick(now) {
     layout();
     camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
-    await warm(logo);
+    // ждём подготовку шейдеров логотипа, но не дольше 1,2 с — экран загрузки не должен висеть
+    await Promise.race([warm(logo), new Promise(r => setTimeout(r, 1200))]);
     requestAnimationFrame(tick);
     setTimeout(() => {
       document.getElementById('loader').classList.add('hide');
