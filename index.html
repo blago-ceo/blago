@@ -93,6 +93,85 @@
   #loader.hide { opacity: 0; pointer-events: none; }
   @keyframes pulse { 50% { color: #222; } }
 
+
+  /* ===== Аккаунт, предзаказ ===== */
+  .bar-right { display: flex; align-items: center; gap: 18px; justify-self: end; }
+  .acct { all: unset; pointer-events: auto; cursor: pointer; font: 500 11px/1 Inter, sans-serif; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink); border-bottom: 1px solid currentColor; padding-bottom: 2px; }
+  .acct:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; }
+  .btn { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--ink); color: #f1f1f0; font: 500 11px/1 Inter, sans-serif; letter-spacing: .12em; text-transform: uppercase;
+    padding: 16px 22px; transition: background .25s, transform .25s; }
+  .btn:hover { background: #333; }
+  .btn:active { transform: scale(.98); }
+  .btn:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
+  .btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .btn.ghost:hover { background: var(--ink); color: #f1f1f0; }
+  .btn.wide { width: 100%; }
+  .btn[disabled] { opacity: .5; pointer-events: none; }
+  .buy { margin-top: 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .price { font-family: "Cormorant Garamond", serif; font-size: 30px; line-height: 1; }
+  .buy-note { margin-top: 20px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .final .btn { margin-top: 28px; }
+
+  .modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; }
+  .modal[hidden] { display: none; }
+  .modal-backdrop { position: absolute; inset: 0; background: rgba(20,20,22,.42); opacity: 0; transition: opacity .35s; }
+  .modal-card { position: relative; width: min(440px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: #e9e9e8;
+    padding: 34px 30px 30px; box-shadow: 0 30px 80px rgba(0,0,0,.25); opacity: 0; transform: translateY(18px) scale(.985);
+    transition: opacity .35s, transform .45s cubic-bezier(.2,.8,.2,1); }
+  .modal.open .modal-backdrop { opacity: 1; }
+  .modal.open .modal-card { opacity: 1; transform: none; }
+  .modal-x { all: unset; cursor: pointer; position: absolute; top: 12px; right: 14px; width: 34px; height: 34px; display: grid; place-items: center;
+    font: 300 26px/1 Inter, sans-serif; color: var(--muted); }
+  .modal-x:hover { color: var(--ink); }
+  .modal h3 { font-family: "Cormorant Garamond", serif; font-weight: 300; font-size: 40px; line-height: 1; margin: 6px 0 20px; }
+  .modal h3 em { font-style: italic; }
+  .tabs { display: flex; gap: 22px; margin-bottom: 22px; border-bottom: 1px solid var(--line); }
+  .tabs button { all: unset; cursor: pointer; font: 500 11px/1 Inter, sans-serif; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); padding: 0 0 12px; border-bottom: 1px solid transparent; margin-bottom: -1px; }
+  .tabs button.on { color: var(--ink); border-color: var(--ink); }
+  .field { display: block; margin-bottom: 16px; }
+  .field > span { display: block; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .field input, .field select, .field textarea { box-sizing: border-box; width: 100%; font: 400 15px/1.4 Inter, sans-serif; color: var(--ink);
+    background: transparent; border: 0; border-bottom: 1px solid rgba(0,0,0,.28); padding: 8px 0; border-radius: 0; outline: none; }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--ink); }
+  .field.bad input { border-color: #9b2c2c; }
+  .err { display: block; min-height: 15px; font-size: 12px; color: #9b2c2c; margin-top: 4px; }
+  .pw { position: relative; }
+  .pw button { all: unset; cursor: pointer; position: absolute; right: 0; top: 33px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 6px 0 20px; font-size: 13px; }
+  .row label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .row a, .linkish { all: unset; cursor: pointer; color: var(--ink); border-bottom: 1px solid rgba(0,0,0,.3); font-size: 13px; }
+  .formerr { min-height: 18px; font-size: 13px; color: #9b2c2c; margin-bottom: 12px; }
+  .demo { margin-top: 18px; font-size: 11.5px; line-height: 1.5; color: var(--muted); }
+  .meter { height: 2px; background: rgba(0,0,0,.12); margin-top: 6px; }
+  .meter i { display: block; height: 100%; width: 0; background: var(--ink); transition: width .3s, background .3s; }
+  .qty { display: inline-flex; align-items: center; border-bottom: 1px solid rgba(0,0,0,.28); }
+  .qty button { all: unset; cursor: pointer; width: 34px; height: 34px; display: grid; place-items: center; font-size: 18px; }
+  .qty output { min-width: 28px; text-align: center; font: 500 15px Inter, sans-serif; }
+  .summary { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid var(--line); padding-top: 14px; margin: 6px 0 18px; }
+  .summary .price { font-size: 32px; }
+  .orders { border-top: 1px solid var(--line); margin: 6px 0 22px; }
+  .order { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .order b { font-weight: 500; }
+  .order .muted { font-size: 12px; }
+  .order .st { justify-self: end; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; }
+  .order .st.cancel { color: #9b2c2c; }
+  .ok-mark { width: 54px; height: 54px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--ink); display: grid; place-items: center; margin-bottom: 14px; }
+  .ok-mark svg { width: 24px; height: 24px; stroke: var(--ink); stroke-width: 1.5; fill: none; stroke-dasharray: 30; stroke-dashoffset: 30; animation: draw .6s .15s forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  .toast { position: fixed; left: 50%; bottom: 26px; z-index: 30; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    background: var(--ink); color: #f1f1f0; font: 400 13px/1.4 Inter, sans-serif; padding: 14px 20px; transition: opacity .3s, transform .4s; max-width: calc(100% - 32px); }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  html.modal-open { overflow: hidden; }
+  @media (max-width: 760px) {
+    .modal { place-items: end center; padding: 0; }
+    .modal-card { width: 100%; max-height: 92vh; padding: 30px 20px 24px; transform: translateY(40px); }
+    .bar-right .small { display: none; }
+  }
+
   @media (max-width: 760px) {
     .wordmark { font-size: 28px; }
     .progress { display: none; }
@@ -131,7 +210,7 @@
       </g>
     </svg>
     <div class="wordmark">Blago</div>
-    <div class="small">Silver 925</div>
+    <div class="bar-right"><span class="small">Silver 925</span><button class="acct" id="acctBtn" type="button">Войти</button></div>
   </div>
   <div class="progress">
     <div class="num" id="num">01</div>
@@ -199,12 +278,22 @@
       <div class="reveal">
         <div class="label" style="justify-content:center">Collection 2026</div>
         <h2><em>Blago</em></h2>
+        <button class="btn ghost" type="button" data-account>Личный кабинет и предзаказы</button>
         <div class="foot small muted"><span>@blago.silver</span><span>Практическая работа №7</span></div>
       </div>
     </div>
   </section>
 </div>
 <div id="spacer"></div>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card">
+    <button class="modal-x" type="button" data-close aria-label="Закрыть">×</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <div id="loader"><div class="b">B</div><div class="small muted" id="loadtext">Загрузка</div></div>
 
@@ -276,6 +365,18 @@ const PRODUCTS = [
     specs: [['Материал', 'Чёрный крафт 170 г/м², хлопковый шнур'], ['Размер', '250 × 320 × 100 мм'], ['Нанесение', 'Тиснение серебряной фольгой'], ['Цвета', '1 — фольга серебро'], ['Производство', 'Склейка, укрепление дна, вклейка ручек']] },
 ];
 
+// Цены и варианты для предзаказа: украшения 50–100 тыс. ₽, остальное — средний чек 25 тыс. ₽
+// (продаются только изделия; упаковка и полиграфия идут в комплекте)
+const SHOP = {
+  'Кольцо-печатка': { price: 68000, option: { label: 'Размер', values: ['16', '17', '18', '19', '20', '21'] } },
+  'Подвеска': { price: 94000, option: { label: 'Длина цепи', values: ['45 см', '50 см', '55 см'] } },
+  'Брелок-карабин': { price: 24000, option: { label: 'Покрытие', values: ['Серебро', 'Чернёное серебро'] } },
+  'Кожаный браслет': { price: 54000, option: { label: 'Размер', values: ['S — 17 см', 'M — 19 см', 'L — 21 см'] } },
+  'Шопер': { price: 9000, option: null },
+  'Зажигалка': { price: 42000, option: { label: 'Отделка', values: ['Полированная', 'Чернёная'] } },
+};
+const rub = n => n.toLocaleString('ru-RU') + ' ₽';
+
 // Экраны изделий и оглавление собираем из данных
 (() => {
   const holder = document.getElementById('products');
@@ -291,6 +392,10 @@ const PRODUCTS = [
         <h2>${p.name}<br><em>${p.sub}</em></h2>
         <p>${p.purpose}</p>
         <div class="specs">${p.specs.map(([k, v]) => `<div><span>${k}</span><span>${v}</span></div>`).join('')}</div>
+        ${SHOP[p.name]
+          ? `<div class="buy"><div><div class="price">${rub(SHOP[p.name].price)}</div><div class="small muted" style="margin-top:6px">Предзаказ · отправка в декабре</div></div>
+             <button class="btn" type="button" data-preorder="${i}" data-name="${p.name} ${p.sub}" data-price="${SHOP[p.name].price}" data-option='${JSON.stringify(SHOP[p.name].option)}'>Предзаказать</button></div>`
+          : `<div class="buy-note">Входит в комплект при покупке изделий</div>`}
       </div></div>
     </section>`;
     if (i === 0) list += '<div class="group">Сувенирная продукция</div>';
@@ -1781,6 +1886,271 @@ function tick(now) {
   }
 })();
 document.fonts.ready.then(layout);
+</script>
+<script>
+// =====================================================================
+//  Аккаунт и предзаказ — ДЕМО без сервера.
+//  Сайт статический (GitHub Pages), поэтому аккаунты и заказы хранятся в этом браузере (localStorage).
+//  Пароль не сохраняется в открытом виде: только SHA-256 от «соль + пароль».
+// =====================================================================
+(() => {
+  const K = { users: 'blago.users', session: 'blago.session', orders: 'blago.orders' };
+  const store = {
+    get(k, def) { try { const v = localStorage.getItem(k) ?? sessionStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; } },
+    set(k, v, persist = true) {
+      try { (persist ? localStorage : sessionStorage).setItem(k, JSON.stringify(v)); (persist ? sessionStorage : localStorage).removeItem(k); } catch {}
+    },
+    del(k) { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch {} },
+  };
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const rub = n => Number(n).toLocaleString('ru-RU') + ' ₽';
+  const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  async function hash(salt, pw) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(salt + ':' + pw));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  const users = () => store.get(K.users, {});
+  const me = () => { const e = store.get(K.session, null); return e ? users()[e] || null : null; };
+  const orders = () => store.get(K.orders, []);
+
+  // ---------- окно ----------
+  const modal = document.getElementById('modal');
+  const body = document.getElementById('modalBody');
+  const acctBtn = document.getElementById('acctBtn');
+  let lastFocus = null, pending = null;
+
+  function open(view, data) {
+    lastFocus = document.activeElement;
+    render(view, data);
+    modal.hidden = false;
+    document.documentElement.classList.add('modal-open');
+    requestAnimationFrame(() => modal.classList.add('open'));
+  }
+  function close() {
+    modal.classList.remove('open');
+    document.documentElement.classList.remove('modal-open');
+    setTimeout(() => { modal.hidden = true; }, 350);
+    pending = null;
+    if (lastFocus) lastFocus.focus();
+  }
+  function focusFirst() { const f = body.querySelector('input, select, textarea, button'); if (f) f.focus(); }
+  modal.addEventListener('click', e => { if (e.target.closest('[data-close]')) close(); });
+  document.addEventListener('keydown', e => {
+    if (modal.hidden) return;
+    if (e.key === 'Escape') close();
+    if (e.key === 'Tab') {   // фокус не выходит за пределы окна
+      const f = [...modal.querySelectorAll('button, input, select, textarea, a[href]')].filter(x => !x.disabled && x.offsetParent);
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    }
+  });
+
+  const toastEl = document.getElementById('toast');
+  let toastT;
+  function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 3200); }
+
+  function syncHeader() {
+    const u = me();
+    acctBtn.textContent = u ? u.name.split(' ')[0] : 'Войти';
+    acctBtn.setAttribute('aria-label', u ? 'Личный кабинет' : 'Войти или зарегистрироваться');
+  }
+
+  // ---------- виды ----------
+  const VIEWS = {
+    auth(mode = 'login') {
+      const reg = mode === 'register';
+      return `
+        <div class="label">${pending ? 'Чтобы оформить предзаказ' : 'Аккаунт Blago'}</div>
+        <h3 id="modalTitle">${reg ? 'Создать <em>аккаунт</em>' : 'С возвращением'}</h3>
+        <div class="tabs" role="tablist">
+          <button type="button" role="tab" class="${reg ? '' : 'on'}" aria-selected="${!reg}" data-mode="login">Вход</button>
+          <button type="button" role="tab" class="${reg ? 'on' : ''}" aria-selected="${reg}" data-mode="register">Регистрация</button>
+        </div>
+        <form id="authForm" novalidate data-mode="${mode}">
+          ${reg ? `<label class="field" data-f="name"><span>Имя</span><input name="name" autocomplete="name" required><i class="err"></i></label>` : ''}
+          <label class="field" data-f="email"><span>Почта</span><input name="email" type="email" autocomplete="email" inputmode="email" required><i class="err"></i></label>
+          <label class="field pw" data-f="password"><span>Пароль</span>
+            <input name="password" type="password" autocomplete="${reg ? 'new-password' : 'current-password'}" required>
+            <button type="button" data-toggle>Показать</button>
+            ${reg ? '<div class="meter"><i></i></div>' : ''}<i class="err"></i></label>
+          ${reg ? `<label class="field" data-f="password2"><span>Повторите пароль</span><input name="password2" type="password" autocomplete="new-password" required><i class="err"></i></label>` : ''}
+          <div class="row">
+            <label><input type="checkbox" name="remember" checked> Запомнить меня</label>
+            ${reg ? '' : '<button type="button" class="linkish" data-forgot>Забыли пароль?</button>'}
+          </div>
+          <div class="formerr" role="alert"></div>
+          <button class="btn wide" type="submit">${reg ? 'Зарегистрироваться' : 'Войти'}</button>
+        </form>
+        <p class="demo">Демо-режим: аккаунт и заказы хранятся только в этом браузере. Пароль сохраняется в виде хэша.</p>`;
+    },
+    account() {
+      const u = me();
+      const list = orders().filter(o => o.email === u.email).reverse();
+      return `
+        <div class="label">Личный кабинет</div>
+        <h3 id="modalTitle">Привет, <em>${esc(u.name.split(' ')[0])}</em></h3>
+        <div class="small muted" style="margin:-8px 0 22px">${esc(u.email)}</div>
+        <div class="label">Предзаказы</div>
+        <div class="orders">${list.length ? list.map(o => `
+          <div class="order">
+            <b>${esc(o.item)}</b><span class="st ${o.status === 'Отменён' ? 'cancel' : ''}">${o.status}</span>
+            <span class="muted">${o.id} · ${new Date(o.date).toLocaleDateString('ru-RU')}${o.option ? ' · ' + esc(o.option) : ''} · ${o.qty} шт.</span><span>${rub(o.total)}</span>
+            ${o.status !== 'Отменён' ? `<span></span><button type="button" class="linkish" style="justify-self:end;font-size:12px" data-cancel="${o.id}">Отменить</button>` : ''}
+          </div>`).join('') : '<p class="small muted" style="padding:16px 0">Пока пусто. Предзаказ оформляется на странице изделия.</p>'}
+        </div>
+        <button class="btn ghost wide" type="button" data-logout>Выйти</button>`;
+    },
+    preorder(d) {
+      return `
+        <div class="label">Предзаказ</div>
+        <h3 id="modalTitle">${esc(d.name)}</h3>
+        <form id="orderForm" novalidate>
+          ${d.option ? `<label class="field"><span>${esc(d.option.label)}</span><select name="option">${d.option.values.map(v => `<option>${esc(v)}</option>`).join('')}</select></label>` : ''}
+          <div class="field"><span>Количество</span>
+            <div class="qty"><button type="button" data-q="-1" aria-label="Меньше">−</button><output name="qty">1</output><button type="button" data-q="1" aria-label="Больше">+</button></div></div>
+          <label class="field" data-f="phone"><span>Телефон для связи</span><input name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+7 900 000-00-00"><i class="err"></i></label>
+          <label class="field"><span>Комментарий</span><textarea name="comment" rows="2" placeholder="Гравировка, пожелания"></textarea></label>
+          <div class="summary"><span class="small muted">Итого</span><span class="price" data-total>${rub(d.price)}</span></div>
+          <button class="btn wide" type="submit">Оформить предзаказ</button>
+        </form>
+        <p class="demo">Оплата не требуется: это предзаказ, мы свяжемся для подтверждения. Демо-режим — заказ сохраняется в этом браузере.</p>`;
+    },
+    done(o) {
+      return `
+        <div class="ok-mark"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+        <div class="label">Предзаказ принят</div>
+        <h3 id="modalTitle">Номер <em>${o.id}</em></h3>
+        <p class="small muted" style="text-transform:none;letter-spacing:0;font-size:14px;line-height:1.6;margin-bottom:22px">
+          ${esc(o.item)}${o.option ? ', ' + esc(o.option) : ''} × ${o.qty} — ${rub(o.total)}.<br>Статус заказа — в личном кабинете.</p>
+        <button class="btn wide" type="button" data-view="account">В личный кабинет</button>`;
+    },
+  };
+
+  function render(view, data) {
+    body.innerHTML = VIEWS[view](data);
+    body.dataset.view = view;
+    if (view === 'auth') bindAuth();
+    if (view === 'preorder') bindOrder(data);
+    setTimeout(focusFirst, 60);
+  }
+
+  // ---------- вход и регистрация ----------
+  function setErr(form, f, msg) {
+    const box = form.querySelector(`[data-f="${f}"]`);
+    if (!box) return;
+    box.classList.toggle('bad', !!msg);
+    box.querySelector('.err').textContent = msg || '';
+  }
+  function strength(pw) {
+    let s = 0;
+    if (pw.length >= 8) s++;
+    if (/[a-zа-я]/i.test(pw) && /\d/.test(pw)) s++;
+    if (/[A-ZА-Я]/.test(pw) && /[a-zа-я]/.test(pw)) s++;
+    if (/[^\w\sа-яё]/i.test(pw) || pw.length >= 12) s++;
+    return s;
+  }
+  function bindAuth() {
+    const form = body.querySelector('#authForm');
+    const reg = form.dataset.mode === 'register';
+    body.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => render('auth', b.dataset.mode)));
+    form.querySelector('[data-toggle]').addEventListener('click', e => {
+      const i = form.password; const show = i.type === 'password';
+      i.type = show ? 'text' : 'password'; e.currentTarget.textContent = show ? 'Скрыть' : 'Показать';
+    });
+    const forgot = form.querySelector('[data-forgot]');
+    if (forgot) forgot.addEventListener('click', () => {
+      form.querySelector('.formerr').textContent = 'В демо-режиме восстановление недоступно: письма отправляет сервер, а его нет.';
+    });
+    if (reg) form.password.addEventListener('input', () => {
+      const s = strength(form.password.value), bar = form.querySelector('.meter i');
+      bar.style.width = (s * 25) + '%';
+      bar.style.background = s <= 1 ? '#9b2c2c' : s === 2 ? '#8a6d1f' : '#111';
+    });
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const v = Object.fromEntries(new FormData(form));
+      const email = (v.email || '').trim().toLowerCase();
+      let bad = false;
+      ['name', 'email', 'password', 'password2'].forEach(f => setErr(form, f, ''));
+      form.querySelector('.formerr').textContent = '';
+      if (reg && (v.name || '').trim().length < 2) { setErr(form, 'name', 'Как к вам обращаться?'); bad = true; }
+      if (!EMAIL.test(email)) { setErr(form, 'email', 'Проверьте адрес почты'); bad = true; }
+      if (reg) {
+        if ((v.password || '').length < 8 || !/\d/.test(v.password) || !/[a-zа-я]/i.test(v.password)) {
+          setErr(form, 'password', 'Минимум 8 символов, буквы и цифры'); bad = true;
+        }
+        if (v.password !== v.password2) { setErr(form, 'password2', 'Пароли не совпадают'); bad = true; }
+      } else if (!v.password) { setErr(form, 'password', 'Введите пароль'); bad = true; }
+      if (bad) return;
+      const btn = form.querySelector('[type="submit"]'); btn.disabled = true;
+      const all = users();
+      if (reg) {
+        if (all[email]) { form.querySelector('.formerr').textContent = 'Такой аккаунт уже есть — войдите.'; btn.disabled = false; return; }
+        const salt = crypto.getRandomValues(new Uint32Array(4)).join('-');
+        all[email] = { name: v.name.trim(), email, salt, hash: await hash(salt, v.password), created: Date.now() };
+        store.set(K.users, all);
+      } else {
+        const u = all[email];
+        if (!u || (await hash(u.salt, v.password)) !== u.hash) {
+          form.querySelector('.formerr').textContent = 'Неверная почта или пароль.'; btn.disabled = false; return;
+        }
+      }
+      store.set(K.session, email, !!v.remember);
+      syncHeader();
+      toast(reg ? 'Аккаунт создан. Добро пожаловать в Blago' : 'Вы вошли');
+      if (pending) { const d = pending; pending = null; render('preorder', d); } else render('account');
+    });
+  }
+
+  // ---------- предзаказ ----------
+  function bindOrder(d) {
+    const form = body.querySelector('#orderForm');
+    let qty = 1;
+    const out = form.querySelector('output'), total = body.querySelector('[data-total]');
+    form.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => {
+      qty = Math.min(5, Math.max(1, qty + +b.dataset.q));
+      out.value = qty; total.textContent = rub(d.price * qty);
+    }));
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const phone = form.phone.value.trim();
+      setErr(form, 'phone', '');
+      if (phone && phone.replace(/\D/g, '').length < 10) { setErr(form, 'phone', 'Похоже, в номере не хватает цифр'); return; }
+      const all = orders();
+      const o = {
+        id: 'BLG-' + String(1000 + all.length + 1), email: me().email, item: d.name, option: form.option ? form.option.value : '',
+        qty, price: d.price, total: d.price * qty, phone, comment: form.comment.value.trim(), date: Date.now(), status: 'Принят',
+      };
+      all.push(o);
+      store.set(K.orders, all);
+      render('done', o);
+      toast('Предзаказ ' + o.id + ' оформлен');
+    });
+  }
+
+  // ---------- кнопки на странице ----------
+  document.addEventListener('click', e => {
+    const pre = e.target.closest('[data-preorder]');
+    if (pre) {
+      const d = { name: pre.dataset.name, price: +pre.dataset.price, option: JSON.parse(pre.dataset.option || 'null') };
+      if (me()) open('preorder', d); else { pending = d; open('auth', 'register'); }
+      return;
+    }
+    if (e.target.closest('#acctBtn, [data-account]')) { me() ? open('account') : open('auth', 'login'); return; }
+    if (e.target.closest('[data-logout]')) { store.del(K.session); syncHeader(); close(); toast('Вы вышли из аккаунта'); return; }
+    const c = e.target.closest('[data-cancel]');
+    if (c) {
+      const all = orders(); const o = all.find(x => x.id === c.dataset.cancel);
+      if (o) { o.status = 'Отменён'; store.set(K.orders, all); render('account'); toast('Предзаказ ' + o.id + ' отменён'); }
+      return;
+    }
+    const v = e.target.closest('[data-view]');
+    if (v && modal.contains(v)) render(v.dataset.view);
+  });
+  syncHeader();
+})();
 </script>
 </body>
 </html>
